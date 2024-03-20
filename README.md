@@ -1,6 +1,11 @@
 # Tengui
 
 ## Introduction
+
+Name "Tengui" is composed of two expressions: *Tengu* + *UI* 
+
+**Tengu** are mythical bird-like creatures in Japanese culture, protectors of nature and skilled warriors. Just like them, our application will watch over "green" systems and act viciously to protect them.
+
 Tengui TUI (terminal user interface) is a work-in-progress tool for remote host observation and management made by Vilnius University faculty of Mathematics and Informatics Information Technologies students:
 
 - Martin Martijan (LordSereos)
