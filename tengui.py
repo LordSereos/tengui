@@ -22,8 +22,19 @@ def main(stdscr):
     ### hosts file should be in the same directory as this script
     ###################################################################
     
+    hosts = []
+    usernames = []
+
     with open('hosts', 'r') as file:
-        hosts = file.read().splitlines()
+        for line in file:
+            # Split each line by whitespace
+            parts = line.split()
+            if len(parts) >= 2:
+                # Extract IP and username
+                ip_address = parts[0]
+                username = parts[1]
+                hosts.append(ip_address)
+                usernames.append(username)
                
     ###################################################################
     ### selected_row is used for tracking the line which user interacts with
@@ -50,8 +61,9 @@ def main(stdscr):
             selected_row = min(len(hosts) - 1, selected_row + 1)
         elif key == curses.KEY_ENTER or key in [10, 13]:
             host = hosts[selected_row]
-            users = get_logged_in_users(host)
-            services = get_running_services(host)
+            username = usernames[selected_row]
+            users = get_logged_in_users(host, username)
+            services = get_running_services(host, username)
             display_info(stdscr, users, services)
         elif key == ord('q'):
             break
@@ -230,12 +242,13 @@ def execute_command(command):
     except subprocess.CalledProcessError as e:
         return f"Error: {e.output}"
 
-def get_logged_in_users(host):
-    command = f'ssh -o StrictHostKeyChecking=yes martin@{host} who'
+def get_logged_in_users(host, username):
+    command = f'ssh -o StrictHostKeyChecking=no {username}@{host} who'
     return execute_command(command)
 
-def get_running_services(host):
-    command = f'ssh -o StrictHostKeyChecking=yes martin@{host} systemctl list-units --type=service --state=running | grep -v "LOAD   =" | grep -v "ACTIVE =" | grep -v "SUB    =" | grep -v "loaded units listed" | grep -v "^$"' 
+
+def get_running_services(host, username):
+    command = f'ssh -o StrictHostKeyChecking=yes {username}@{host} systemctl list-units --type=service --state=running | grep -v "LOAD   =" | grep -v "ACTIVE =" | grep -v "SUB    =" | grep -v "loaded units listed" | grep -v "^$"' 
     return execute_command(command)
 
 if __name__ == "__main__":
