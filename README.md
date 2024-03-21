@@ -24,6 +24,10 @@ There are following directories and files in this project:
 
 - Modules - folder containing necessary scripts for updating and managing hosts.
 - hosts - file which should be populated with IPv4 addresses of hosts for desired monitoring.
+
+  	- Should contain information in three columns (TO BE IMPLEMENTED IN CODE):
+IP | username | SSH port (optional?)
+
 - tengui.py - script which initializes the terminal user interface.
 
 ## Usage
