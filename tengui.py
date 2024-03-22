@@ -11,11 +11,9 @@ def main(stdscr):
     ###################################################################
     ### Setting up TUI:
     ### curs_set(0) disables the cursor
-    ### init_pair() initializes a color pair for use in the interface
     ###################################################################
     
     curses.curs_set(0)
-    curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE)
 
     ###################################################################
     ### Read from hosts file to retrieve desired hosts
@@ -48,8 +46,8 @@ def main(stdscr):
     ###################################################################
     ### Captures user input
     ### Keyboard keys UP and DOWN manage current_row
-    ### Enter enforces action on the current line (current_row)
-    ### q is used to go back or quit the TUI
+    ### Enter - enforces action on the current line (current_row)
+    ### q     - used to go back or quit the TUI
     ###################################################################
     
     while True:
@@ -135,10 +133,11 @@ def display_info(stdscr, users, services):
     ###################################################################
     
     pad = curses.newpad(total_height, w)
+    
 
     ###################################################################
     ### Tracking current position for user input actions
-    ### pad_pos - topmost line that is currently seen in the pad
+    ### pad_pos      - topmost line that is currently seen in the pad
     ### selected_row - current line that user interacts with
     ###################################################################
     
@@ -175,19 +174,19 @@ def display_info(stdscr, users, services):
         pad.addstr(len(users_lines) + 2, 0, f"Running services: {len(services_lines)}")
         for i, service in enumerate(services_lines, start=len(users_lines) + 3):
             if i - (len(users_lines) + 1) == selected_row:
-                pad.addstr(i, 0, f"[X]{i}", curses.A_REVERSE)
+                pad.addstr(i, 0, f"[X]", curses.A_REVERSE)
                 if len(service) > w - 4:
                     truncated_service = service[:w - 4]
-                    pad.addstr(i, 5, truncated_service, curses.A_REVERSE)
+                    pad.addstr(i, 3, truncated_service, curses.A_REVERSE)
                 else:
-                    pad.addstr(i, 5, service, curses.A_REVERSE)
+                    pad.addstr(i, 3, service, curses.A_REVERSE)
             else:
-                pad.addstr(i, 0, f"[X]{i}")
+                pad.addstr(i, 0, f"[X]")
                 if len(service) > w - 4: 
                     truncated_service = service[:w - 4]
-                    pad.addstr(i, 5, truncated_service)
+                    pad.addstr(i, 3, truncated_service)
                 else:
-                    pad.addstr(i, 5, service)
+                    pad.addstr(i, 3, service)
         
         ###################################################################
         ### Display footer
@@ -207,17 +206,20 @@ def display_info(stdscr, users, services):
         onIt = find_selected_element(selected_row, users_lines, services_lines)
         
         bottom_message = f"Press 'q' to go back to the main menu, selected row is {selected_row}, onIt = {onIt}"
-        stdscr.addstr(h-2, 0, bottom_message)
+        stdscr.addstr(h-2, 0, bottom_message, curses.A_BOLD)
 
         ###################################################################
         ### Display the pad content on the screen
         ### Adjust height to fit in the terminal, leave space for footer
         ###################################################################
-        
         pad.refresh(pad_pos, 0, 0, 0, h-3, w-1)
 
         ###################################################################
-        ### Get user input
+        ### Get user input:
+        ### q     - go back to the main menu
+        ### UP    - change the selected row to one higher if possible
+        ### DOWN  - change the selected row to one lower if possible
+        ### ENTER - open action confirmation modal
         ###################################################################
         
         key = stdscr.getch()
@@ -231,16 +233,65 @@ def display_info(stdscr, users, services):
             selected_row = min((len(users_lines)+len(services_lines)), selected_row + 1)
             if selected_row >= pad_pos + h - 8:
                 pad_pos = min(selected_row - h + 8, total_height - h)
+        if key == curses.KEY_ENTER or key == 10:
+            display_modal(stdscr, onIt, h, w)
+            
 
 def find_selected_element(selected_row, users_lines, services_lines):
-    selected_element = 'not defined '
+    selected_element = ''
     if selected_row <= len(users_lines)+len(services_lines):
        if selected_row <= len(users_lines):
         selected_element = users_lines[selected_row-1]
        else:
         selected_element = services_lines[selected_row - len(users_lines)-1]
         
-    return selected_element[0:11]
+    return selected_element.split()[0]
+
+    
+def display_modal(stdscr, message, height, width):
+    
+    ###################################################################
+    ### Center the modal, place it on top of the pad
+    ### modal_y and modal_x represent the top-left corner coordinates
+    ###################################################################
+    
+    center_y = height // 2
+    center_x = width // 2
+    
+    modal_height = 10
+    modal_width = width // 2
+    
+    modal_y = center_y - modal_height // 2
+    modal_x = center_x - modal_width // 2
+    
+    ###################################################################
+    ### Initialize the modal, add border to it.
+    ### Initialize coloured pair to drag attention about an action.
+    ###################################################################
+    
+    modal = curses.newwin(modal_height, modal_width, modal_y, modal_x)
+    modal.border()
+    
+    curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
+    
+    modal.addstr(1, 2, f'KILLING {message} .', curses.color_pair(1))
+    modal.addstr(3, 2, 'Are you sure?', curses.A_BOLD | curses.A_UNDERLINE)
+    modal.addstr(7, 2, 'Press ENTER to confirm')
+    modal.addstr(8, 2, 'Press q to cancel')
+    modal.refresh()
+    
+    ###################################################################
+    ### Get user input:
+    ### ENTER - confirm action presented in the modal
+    ### q     - close the modal
+    ###################################################################
+    while True:
+        key = stdscr.getch()
+        if key == curses.KEY_ENTER or key == 10:
+            modal.addstr(5, 2, "SUCCESS", curses.A_BOLD)
+            modal.refresh()
+        elif key == ord('q'):
+            break
 
 
 def execute_command(command):
@@ -256,7 +307,7 @@ def get_logged_in_users(host, username):
 
 
 def get_running_services(host, username):
-    command = f'ssh -o StrictHostKeyChecking=yes {username}@{host} systemctl list-units --type=service --state=running | grep -v "LOAD   =" | grep -v "ACTIVE =" | grep -v "SUB    =" | grep -v "loaded units listed" | grep -v "^$"' 
+    command = f'ssh -o StrictHostKeyChecking=yes {username}@{host} systemctl list-units --type=service --state=running | grep -v "LOAD   =" | grep -v "ACTIVE =" | grep -v "SUB    =" | grep -v "loaded units listed" | grep -v "^$" | grep -v "UNIT"' 
     return execute_command(command)
 
 if __name__ == "__main__":
