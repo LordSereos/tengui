@@ -1,8 +1,3 @@
-###################################################################
-### Tengui TUI author:
-### Martin Martijan
-###################################################################
-
 import curses
 import subprocess
 
@@ -309,6 +304,11 @@ def get_logged_in_users(host, username):
 def get_running_services(host, username):
     command = f'ssh -o StrictHostKeyChecking=yes {username}@{host} systemctl list-units --type=service --state=running | grep -v "LOAD   =" | grep -v "ACTIVE =" | grep -v "SUB    =" | grep -v "loaded units listed" | grep -v "^$" | grep -v "UNIT"' 
     return execute_command(command)
-
+    
 if __name__ == "__main__":
     curses.wrapper(main)
+
+###################################################################
+### Tengui TUI author:
+### Martin Martijan
+###################################################################
