@@ -128,7 +128,7 @@ def display_info(stdscr, users, services):
     users_lines = users.splitlines()
     services_lines = services.splitlines()
 
-    total_height = len(users_lines) + len(services_lines) + 9
+    total_height = len(users_lines) + len(services_lines) + 8
 
     ###################################################################
     ### Initializes a scrollable pad for displaying information
@@ -143,7 +143,7 @@ def display_info(stdscr, users, services):
     ###################################################################
     
     pad_pos = 0
-    selected_row = 0
+    selected_row = 1
     
     while True:
         ###################################################################
@@ -159,7 +159,7 @@ def display_info(stdscr, users, services):
         
         pad.addstr(0, 0, f"Logged in users: {len(users_lines)}")
         for i, user in enumerate(users_lines, start=1):
-            if i - 1 == selected_row:
+            if i == selected_row:
                 pad.addstr(i, 0, "[X]", curses.A_REVERSE)
                 pad.addstr(i, 4, user, curses.A_REVERSE)
             else:
@@ -174,7 +174,7 @@ def display_info(stdscr, users, services):
         
         pad.addstr(len(users_lines) + 2, 0, f"Running services: {len(services_lines)}")
         for i, service in enumerate(services_lines, start=len(users_lines) + 3):
-            if i - (len(users_lines) + 2) == selected_row:
+            if i - (len(users_lines) + 1) == selected_row:
                 pad.addstr(i, 0, f"[X]{i}", curses.A_REVERSE)
                 if len(service) > w - 4:
                     truncated_service = service[:w - 4]
@@ -188,27 +188,25 @@ def display_info(stdscr, users, services):
                     pad.addstr(i, 5, truncated_service)
                 else:
                     pad.addstr(i, 5, service)
-
-        ###################################################################
-        ### For test purposes, another field with selectable lines
-        ### Currently selected_row works bad when jumping from services
-        ###################################################################
         
-        pad.addstr(len(users_lines) + len(services_lines) + 4, 0, "Hellos:")
-        for i in range(len(users_lines) + len(services_lines) + 5, len(users_lines) + len(services_lines) + 7):
-            if i - 3 == selected_row:
-                pad.addstr(i, 0, f"[X]{i}", curses.A_REVERSE)
-                pad.addstr(i, 6, "hello", curses.A_REVERSE)
-            else:
-                pad.addstr(i, 0, f"[X]{i}")
-                pad.addstr(i, 6, "hello")
-
         ###################################################################
         ### Display footer
-        ### Selected row, pad_pos and height are left for debugging purposes
+        ### Selected row and onIt are left for debugging
+        ###
+        ### onIt represents the line where user currently is. Because of TUI
+        ### lines peculiar indexing, selected_row doesn't actually represent
+        ### the line of information where user currently stands. This is 
+        ### because we leave some lines not to be selectable, like headers
+        ### such as "Logged in users" and "Running services", as well as 
+        ### empty lines after each list.
+        ###
+        ### find_selected_element() maps currently highlighted row with actual
+        ### data where user thinks he is.
         ###################################################################
         
-        bottom_message = f"Press 'q' to go back to the main menu, selected row is {selected_row}, pad_pos =     {pad_pos}, h = {h}"
+        onIt = find_selected_element(selected_row, users_lines, services_lines)
+        
+        bottom_message = f"Press 'q' to go back to the main menu, selected row is {selected_row}, onIt = {onIt}"
         stdscr.addstr(h-2, 0, bottom_message)
 
         ###################################################################
@@ -230,9 +228,19 @@ def display_info(stdscr, users, services):
             if selected_row < pad_pos:
                 pad_pos = selected_row
         elif key == curses.KEY_DOWN:
-            selected_row = min(total_height, selected_row + 1)
+            selected_row = min((len(users_lines)+len(services_lines)), selected_row + 1)
             if selected_row >= pad_pos + h - 8:
                 pad_pos = min(selected_row - h + 8, total_height - h)
+
+def find_selected_element(selected_row, users_lines, services_lines):
+    selected_element = 'not defined '
+    if selected_row <= len(users_lines)+len(services_lines):
+       if selected_row <= len(users_lines):
+        selected_element = users_lines[selected_row-1]
+       else:
+        selected_element = services_lines[selected_row - len(users_lines)-1]
+        
+    return selected_element[0:11]
 
 
 def execute_command(command):
