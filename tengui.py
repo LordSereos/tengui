@@ -17,6 +17,7 @@ def main(stdscr):
     
     hosts = []
     usernames = []
+    ports = []
 
     with open('hosts', 'r') as file:
         for line in file:
@@ -25,8 +26,10 @@ def main(stdscr):
             if len(parts) >= 2:
                 # Extract IP and username
                 ip_address = parts[0]
-                username = parts[1]
+                port = parts[1]
+                username = parts[2]
                 hosts.append(ip_address)
+                ports.append(port)
                 usernames.append(username)
                
     ###################################################################
@@ -55,8 +58,9 @@ def main(stdscr):
         elif key == curses.KEY_ENTER or key in [10, 13]:
             host = hosts[selected_row]
             username = usernames[selected_row]
-            users = get_logged_in_users(host, username)
-            services = get_running_services(host, username)
+            port = ports[selected_row]
+            users = get_logged_in_users(host, port, username)
+            services = get_running_services(host, port, username)
             display_info(stdscr, users, services)
         elif key == ord('q'):
             break
@@ -296,13 +300,13 @@ def execute_command(command):
     except subprocess.CalledProcessError as e:
         return f"Error: {e.output}"
 
-def get_logged_in_users(host, username):
-    command = f'ssh -o StrictHostKeyChecking=no {username}@{host} who'
+def get_logged_in_users(host, port, username):
+    command = f'ssh -o StrictHostKeyChecking=no -p {port} {username}@{host} who'
     return execute_command(command)
 
 
-def get_running_services(host, username):
-    command = f'ssh -o StrictHostKeyChecking=yes {username}@{host} systemctl list-units --type=service --state=running | grep -v "LOAD   =" | grep -v "ACTIVE =" | grep -v "SUB    =" | grep -v "loaded units listed" | grep -v "^$" | grep -v "UNIT"' 
+def get_running_services(host, port, username):
+    command = f'ssh -o StrictHostKeyChecking=yes -p {port} {username}@{host} systemctl list-units --type=service --state=running | grep -v "LOAD   =" | grep -v "ACTIVE =" | grep -v "SUB    =" | grep -v "loaded units listed" | grep -v "^$" | grep -v "UNIT"' 
     return execute_command(command)
     
 if __name__ == "__main__":
