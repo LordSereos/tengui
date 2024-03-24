@@ -40,6 +40,9 @@ python3 tengui.py
 - ssh keys exchange between monitoring machine and other hosts
 - ...
 
+## User interaction flow
+![Alt Text](utils/Flowchart.jpg)
+
 ## Current functionality
 
 - Main menu displays all hosts from the hosts file
@@ -48,3 +51,5 @@ python3 tengui.py
   - Logged in users
   - Currently running services
 - Navigating through the selected host information window
+
+
