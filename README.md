@@ -26,8 +26,8 @@ There are following directories and files in this project:
 - hosts - file which should be populated with IPv4 addresses of hosts for desired monitoring.
 
   	- Should contain information in two columns:
-  	  **{IP} {username}**
-  	- Example could be: **10.0.0.1 root**
+  	  **{IP} {port} {username}**
+  	- Example could be: **10.0.0.1 2222 root**
 
 - tengui.py - script which initializes the terminal user interface.
 
