@@ -1,5 +1,6 @@
 import curses
 import subprocess
+import paramiko
 
 def main(stdscr):
 
@@ -61,7 +62,8 @@ def main(stdscr):
             port = ports[selected_row]
             users = get_logged_in_users(host, port, username)
             services = get_running_services(host, port, username)
-            display_info(stdscr, users, services)
+            ports = get_port_info(host, port, username)
+            display_info(stdscr, users, services, host, port, username)
         elif key == ord('q'):
             break
 
@@ -110,7 +112,7 @@ def display_menu(stdscr, hosts, selected_row):
     
     
 
-def display_info(stdscr, users, services):
+def display_info(stdscr, users, services, host, port, username):
 
     ###################################################################
     ### Get user terminal max width and height to adjust TUI limits
@@ -142,12 +144,12 @@ def display_info(stdscr, users, services):
     
     pad_pos = 0
     selected_row = 1
-    
+
     while True:
         ###################################################################
         ### Clear the pad before each refresh
         ###################################################################
-        
+    
         pad.clear()
 
         ###################################################################
@@ -187,6 +189,21 @@ def display_info(stdscr, users, services):
                 else:
                     pad.addstr(i, 3, service)
         
+        ###################################################################
+        ### 
+        ### POC menu-click initiated remote-shell-script with return to modal
+        ### 
+        ###################################################################
+                    
+        check_ports_line = len(users_lines) + len(services_lines) + 4
+
+        pad.addstr(check_ports_line, 0, "CHECK PORTS", curses.A_NORMAL) 
+        if selected_row == check_ports_line-4:
+            pad.addstr(check_ports_line, 0, "[X] CHECK PORTS", curses.A_REVERSE) 
+
+
+
+
         ###################################################################
         ### Display footer
         ### Selected row and onIt are left for debugging
@@ -229,25 +246,28 @@ def display_info(stdscr, users, services):
             if selected_row < pad_pos:
                 pad_pos = selected_row
         elif key == curses.KEY_DOWN:
-            selected_row = min((len(users_lines)+len(services_lines)), selected_row + 1)
+            selected_row = min((len(users_lines)+len(services_lines)+2), selected_row + 1)
             if selected_row >= pad_pos + h - 8:
                 pad_pos = min(selected_row - h + 8, total_height - h)
         if key == curses.KEY_ENTER or key == 10:
-            display_modal(stdscr, onIt, h, w)
+            display_modal(stdscr, onIt, h, w, host, port, username)
             
 
 def find_selected_element(selected_row, users_lines, services_lines):
     selected_element = ''
-    if selected_row <= len(users_lines)+len(services_lines):
+    if selected_row <= len(users_lines)+len(services_lines)+4:
        if selected_row <= len(users_lines):
         selected_element = users_lines[selected_row-1]
+       elif selected_row >= len(users_lines)+len(services_lines):
+        selected_element = "CHECK PORTS"
        else:
-        selected_element = services_lines[selected_row - len(users_lines)-1]
+        selected_element = services_lines[selected_row - len(users_lines)]
         
-    return selected_element.split()[0]
+    #return selected_element.split()[0]
+    return selected_element
 
     
-def display_modal(stdscr, message, height, width):
+def display_modal(stdscr, message, height, width, host, port, username):
     
     ###################################################################
     ### Center the modal, place it on top of the pad
@@ -272,12 +292,26 @@ def display_modal(stdscr, message, height, width):
     modal.border()
     
     curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
-    
-    modal.addstr(1, 2, f'KILLING {message} .', curses.color_pair(1))
-    modal.addstr(3, 2, 'Are you sure?', curses.A_BOLD | curses.A_UNDERLINE)
-    modal.addstr(7, 2, 'Press ENTER to confirm')
-    modal.addstr(8, 2, 'Press q to cancel')
-    modal.refresh()
+    if message == "CHECK PORTS":
+        modal.addstr(1, 2, "Enter separated by spaces ports that should be opened on the remote host: ")
+        modal.addstr(7, 2, 'Press ENTER to confirm')
+        modal.addstr(8, 2, 'Press q to cancel')
+        modal.refresh()
+        
+#       Get port numbers
+        curses.echo()
+        stdscr.move(modal_y + 2, modal_x + 2)
+        port_input = stdscr.getstr().decode()
+        curses.noecho() 
+        ports = port_input.split(' ')
+        
+        get_port_info(host, port, username, *ports)
+    else:
+        modal.addstr(1, 2, f'KILLING {message} .', curses.color_pair(1))
+        modal.addstr(3, 2, 'Are you sure?', curses.A_BOLD | curses.A_UNDERLINE)
+        modal.addstr(7, 2, 'Press ENTER to confirm')
+        modal.addstr(8, 2, 'Press q to cancel')
+        modal.refresh()
     
     ###################################################################
     ### Get user input:
@@ -292,6 +326,9 @@ def display_modal(stdscr, message, height, width):
         elif key == ord('q'):
             break
 
+script_paths = {
+    "check_ports": "./modules/ports/check.sh",
+}
 
 def execute_command(command):
     try:
@@ -300,15 +337,75 @@ def execute_command(command):
     except subprocess.CalledProcessError as e:
         return f"Error: {e.output}"
 
+def run_shell_script(script_name, host, port, username, *args):
+    try:
+        ssh_client = paramiko.SSHClient()
+        ssh_client.load_system_host_keys()
+        ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh_client.connect(host, port=port, username=username)
+
+        if not ssh_client.get_transport().is_active():
+            print("SSH connection is not alive.")
+            return None
+
+        script_path = script_paths.get(script_name)
+        if script_path is None:
+            print(f"Error: Script '{script_name}' not found.")
+            return None
+
+#        FOR EXECUTING REMOTE SCRIPT FROM REMOTE MACHINE
+#        ------------------------------------------------
+#        with open(script_path, 'r') as file:
+#            script_content = file.read()
+#
+#        remote_script_path = f"/home/{username}/{script_name}"
+#        with ssh_client.open_sftp() as sftp:
+#            with sftp.file(remote_script_path, 'w') as remote_file:
+#                remote_file.write(script_content)
+#
+#        ssh_client.exec_command(f"chmod +x {remote_script_path}")
+#
+#        command = f"{remote_script_path} {' '.join(args)}"
+#        stdin, stdout, stderr = ssh_client.exec_command(command)
+
+#       FOR EXECUTING REMOTE SCRIPT FROM LOCAL MACHINE
+#        ------------------------------------------------
+        with open(script_path, 'r') as file:
+            script_content = file.read()
+
+        command = f"sudo bash -s {' '.join(args)}"
+        stdin, stdout, stderr = ssh_client.exec_command(command)
+
+        stdin.write(script_content)
+        stdin.channel.shutdown_write()
+
+#       SAVE OUTPUT TO TEXR FILE
+#        ------------------------------------------------
+
+        output = stdout.read().decode()
+        output_file_path = f"./{host}-{script_name}.info"
+        with open(output_file_path, 'w') as output_file:
+            output_file.write(output)
+        return output
+    except Exception as e:
+        print("Error:", e)
+        return None
+    finally:
+        if ssh_client:
+            ssh_client.close()
+
+
 def get_logged_in_users(host, port, username):
     command = f'ssh -o StrictHostKeyChecking=no -p {port} {username}@{host} who'
     return execute_command(command)
-
 
 def get_running_services(host, port, username):
     command = f'ssh -o StrictHostKeyChecking=yes -p {port} {username}@{host} systemctl list-units --type=service --state=running | grep -v "LOAD   =" | grep -v "ACTIVE =" | grep -v "SUB    =" | grep -v "loaded units listed" | grep -v "^$" | grep -v "UNIT"' 
     return execute_command(command)
     
+def get_port_info(host, port, username, *args):
+    return run_shell_script("check_ports", host, port, username, *args)
+
 if __name__ == "__main__":
     curses.wrapper(main)
 
