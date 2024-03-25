@@ -25,7 +25,6 @@ def main(stdscr):
             # Split each line by whitespace
             parts = line.split()
             if len(parts) >= 2:
-                # Extract IP and username
                 ip_address = parts[0]
                 port = parts[1]
                 username = parts[2]
@@ -40,7 +39,6 @@ def main(stdscr):
     
     selected_row = 0
     display_menu(stdscr, hosts, selected_row)
-
 
     ###################################################################
     ### Captures user input
@@ -62,7 +60,7 @@ def main(stdscr):
             port = ports[selected_row]
             users = get_logged_in_users(host, port, username)
             services = get_running_services(host, port, username)
-            ports = get_port_info(host, port, username)
+            ports_info = get_port_info(host, port, username)
             display_info(stdscr, users, services, host, port, username)
         elif key == ord('q'):
             break
@@ -93,12 +91,15 @@ def display_menu(stdscr, hosts, selected_row):
     for i, line in enumerate(title):
         stdscr.addstr(title_y + i, title_x, line)
 
-
+    bottom_message = f"Press 'q' to exit"
+    stdscr.addstr(h-2, 0, bottom_message, curses.A_BOLD)
+    
     ###################################################################
     ### Displays the menu options which currently are host IP
     ### hosts file should contain IPs of desired hosts (IP per line)
     ### Displayed IPs are selectable and clickable
     ###################################################################
+    
     for i, host in enumerate(hosts):
         x = w // 2 - len(host) // 2
         y = h // 2 - len(hosts) // 2 + i
@@ -135,7 +136,6 @@ def display_info(stdscr, users, services, host, port, username):
     
     pad = curses.newpad(total_height, w)
     
-
     ###################################################################
     ### Tracking current position for user input actions
     ### pad_pos      - topmost line that is currently seen in the pad
@@ -168,13 +168,14 @@ def display_info(stdscr, users, services, host, port, username):
         
         ###################################################################
         ### Display running services using get_running_services() function
-        ### Highlight line with curses.A_REVERSE if currently on that line
+        ### Highlight line with curses.A_REVERSE if currently on that line:
+        ### (i-2) is for not counting header and empty line in between lists
         ### Truncate long service names if they exceed terminal width
         ###################################################################
         
         pad.addstr(len(users_lines) + 2, 0, f"Running services: {len(services_lines)}")
         for i, service in enumerate(services_lines, start=len(users_lines) + 3):
-            if i - (len(users_lines) + 1) == selected_row:
+            if (i - 2) == selected_row:
                 pad.addstr(i, 0, f"[X]", curses.A_REVERSE)
                 if len(service) > w - 4:
                     truncated_service = service[:w - 4]
@@ -254,18 +255,26 @@ def display_info(stdscr, users, services, host, port, username):
             
 
 def find_selected_element(selected_row, users_lines, services_lines):
+
+    ###################################################################
+    ### Mapping selected_row with real elements in lists, because when
+    ### jumping we skip headers and empty lines
+    ###
+    ### selected_row-1 everywhere is because arrays starting index is 0,
+    ### but selected_row starts from 1.
+    ###################################################################
+    
     selected_element = ''
     if selected_row <= len(users_lines)+len(services_lines)+4:
        if selected_row <= len(users_lines):
         selected_element = users_lines[selected_row-1]
+       elif selected_row <= len(users_lines)+len(services_lines):
+        selected_element = services_lines[selected_row-len(users_lines)-1]
        elif selected_row >= len(users_lines)+len(services_lines):
         selected_element = "CHECK PORTS"
-       else:
-        selected_element = services_lines[selected_row - len(users_lines)]
-        
-    #return selected_element.split()[0]
-    return selected_element
 
+        
+    return selected_element.split()[0]+"                     "
     
 def display_modal(stdscr, message, height, width, host, port, username):
     
