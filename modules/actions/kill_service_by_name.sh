@@ -19,11 +19,11 @@ if [[ "$#" -gt 1 ]]; then
 fi
 
 SCRIPT_EXECUTOR_ID=$(id -u)
-if [[ "$SCRIPT_EXECUTOR_ID" -ne 0 ]]; then
-	echo "Please run $0 as root"
-	echo "Exiting..."
-	exit
-fi
+#if [[ "$SCRIPT_EXECUTOR_ID" -ne 0 ]]; then
+#	echo "Please run $0 as root"
+#	echo "Exiting..."
+#	exit
+#fi
 
 # Extract PID of the given service
 EXTRACTED_PID=$(systemctl show --property MainPID $1)

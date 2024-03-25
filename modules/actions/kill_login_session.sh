@@ -19,11 +19,11 @@ if [[ "$#" -gt 1 ]]; then
 fi
 
 SCRIPT_EXECUTOR_ID=$(id -u)
-if [[ "$SCRIPT_EXECUTOR_ID" -ne 0 ]]; then
-	echo "Please run $0 as root"
-	echo "Exiting..."
-	exit
-fi
+#if [[ "$SCRIPT_EXECUTOR_ID" -ne 0 ]]; then
+#	echo "Please run $0 as root"
+#	echo "Exiting..."
+#	exit
+#fi
 
 TTY_TO_KILL="$1"
 pkill -KILL -et $TTY_TO_KILL
