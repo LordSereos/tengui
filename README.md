@@ -25,7 +25,7 @@ There are following directories and files in this project:
 - Modules - folder containing necessary scripts for updating and managing hosts.
 - hosts - file which should be populated with IPv4 addresses of hosts for desired monitoring.
 
-  	- Should contain information in two columns:
+  	- Should contain information in three columns:
   	  **{IP} {port} {username}**
   	- Example could be: **10.0.0.1 2222 root**
 
@@ -50,6 +50,6 @@ python3 tengui.py
 - Functionality to click on a host from main menu and view information about it:
   - Logged in users
   - Currently running services
-- Navigating through the selected host information window
+- Navigating and selecting a user or service from inidividual host information to terminate remotely.
 
 
