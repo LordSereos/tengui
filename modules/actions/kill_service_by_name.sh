@@ -18,17 +18,20 @@ if [[ "$#" -gt 1 ]]; then
     exit 1
 fi
 
+echo "Host: $(hostname -I)"
 SCRIPT_EXECUTOR_ID=$(id -u)
-#if [[ "$SCRIPT_EXECUTOR_ID" -ne 0 ]]; then
-#	echo "Please run $0 as root"
-#	echo "Exiting..."
-#	exit
-#fi
+echo "Running script as $(whoami) with ID: $SCRIPT_EXECUTOR_ID"
+if [[ "$SCRIPT_EXECUTOR_ID" -ne 0 ]]; then
+	echo "Please run $0 as root"
+	echo "Exiting..."
+	exit
+fi
 
 # Extract PID of the given service
 EXTRACTED_PID=$(systemctl show --property MainPID $1)
 # Retrieve only the PID
 PID_TO_KILL="${EXTRACTED_PID#*=}"
+echo "PID of service $1 $PID_TO_KILL"
 
 # Check if such service is running
 if [[ "$PID_TO_KILL" -eq 0 ]]; then
@@ -36,6 +39,7 @@ if [[ "$PID_TO_KILL" -eq 0 ]]; then
 	echo "Exiting..."
 	exit
 fi
+
 
 kill "$PID_TO_KILL"
 EXIT_STATUS=$?
@@ -48,16 +52,19 @@ if [[ "$EXIT_STATUS" -gt 0 ]]; then
 fi
 
 # Wait for service to be killed
+echo "Waiting for service to be fully killed..."
 sleep 2
 
 # Retrieve the PID again and check, to make sure that the service was killed
+echo "Rechecking if  service was killed"
 EXTRACTED_PID=$(systemctl show --property MainPID $1)
 PID_TO_KILL="${EXTRACTED_PID#*=}"
+echo "PID of service $1 $PID_TO_KILL"
 
 if [[ "$PID_TO_KILL" -eq 0 ]]; then
 	echo "Service $1 killed succesfully"
 else
-	echo "Unknown ERROR"
+	echo "Unknown ERROR, probably the system itself restarted $1"
 	echo "Service $1 could not have been killed"
 	echo "Exiting..."
 	exit

@@ -348,10 +348,11 @@ def display_modal(stdscr, onIt, family, height, width, host, port, username):
         key = stdscr.getch()
         if key == curses.KEY_ENTER or key == 10:
             if family == "USERS": 
-                subprocess.run(["./modules/actions/kill_login_session.sh", withWhat])
+                run_shell_script("kill_login_session", host, port, username, withWhat)
                 modal.addstr(5, 2, f"SUCCESS", curses.A_BOLD)
             if family == "SERVICES":
-                subprocess.run(["./modules/actions/kill_service_by_name.sh", withWhat])
+                run_shell_script("kill_service_by_name", host, port, username, withWhat)
+                #---------------------------------------------------------------------------------
                 modal.addstr(5, 2, f"SUCCESS", curses.A_BOLD)
             modal.refresh()
         elif key == ord('q'):
@@ -359,6 +360,8 @@ def display_modal(stdscr, onIt, family, height, width, host, port, username):
 
 script_paths = {
     "check_ports": "./modules/ports/check.sh",
+    "kill_service_by_name": "./modules/actions/kill_service_by_name.sh",
+    "kill_login_session": "./modules/actions/kill_login_session.sh",
 }
 
 def execute_command(command):
