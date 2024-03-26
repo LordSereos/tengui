@@ -220,9 +220,9 @@ def display_info(stdscr, users, services, host, port, username):
         ### data where user thinks he is.
         ###################################################################
         
-        onIt = find_selected_element(selected_row, users_lines, services_lines)
+        onIt, family = find_selected_element(selected_row, users_lines, services_lines)
         
-        bottom_message = f"Press 'q' to go back to the main menu, selected row is {selected_row}, onIt = {onIt}"
+        bottom_message = f"Press 'q' to go back to the main menu, selected row is {selected_row}, onIt = {onIt.split()[0]+'                '} "
         stdscr.addstr(h-2, 0, bottom_message, curses.A_BOLD)
 
         ###################################################################
@@ -251,7 +251,7 @@ def display_info(stdscr, users, services, host, port, username):
             if selected_row >= pad_pos + h - 8:
                 pad_pos = min(selected_row - h + 8, total_height - h)
         if key == curses.KEY_ENTER or key == 10:
-            display_modal(stdscr, onIt, h, w, host, port, username)
+            display_modal(stdscr, onIt, family, h, w, host, port, username)
             
 
 def find_selected_element(selected_row, users_lines, services_lines):
@@ -265,29 +265,35 @@ def find_selected_element(selected_row, users_lines, services_lines):
     ###################################################################
     
     selected_element = ''
+    family = ''
+    
     if selected_row <= len(users_lines)+len(services_lines)+4:
        if selected_row <= len(users_lines):
         selected_element = users_lines[selected_row-1]
+        family = "USERS"
        elif selected_row <= len(users_lines)+len(services_lines):
         selected_element = services_lines[selected_row-len(users_lines)-1]
+        family = "SERVICES"
        elif selected_row >= len(users_lines)+len(services_lines):
         selected_element = "CHECK PORTS"
+        family = "PORTS"
 
-        
-    return selected_element.split()[0]+"                     "
+    return selected_element, family 
+    #return selected_element.split()[0]+"                     "
     
-def display_modal(stdscr, message, height, width, host, port, username):
+def display_modal(stdscr, onIt, family, height, width, host, port, username):
     
     ###################################################################
     ### Center the modal, place it on top of the pad
     ### modal_y and modal_x represent the top-left corner coordinates
     ###################################################################
+    who = onIt.split()[0]
     
     center_y = height // 2
     center_x = width // 2
     
-    modal_height = 10
-    modal_width = width // 2
+    modal_height = 16
+    modal_width = width -10
     
     modal_y = center_y - modal_height // 2
     modal_x = center_x - modal_width // 2
@@ -301,7 +307,23 @@ def display_modal(stdscr, message, height, width, host, port, username):
     modal.border()
     
     curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
-    if message == "CHECK PORTS":
+    if family == "USERS":
+        withWhat = onIt.split()[1]
+        modal.addstr(1, 2, f'KILLING USER {who} .', curses.color_pair(1))
+        modal.addstr(3, 2, 'Are you sure?', curses.A_BOLD | curses.A_UNDERLINE)
+        modal.addstr(7, 2, 'Press ENTER to confirm')
+        modal.addstr(8, 2, 'Press q to cancel')
+        modal.addstr(10, 2, '')
+        modal.refresh()
+    elif family == "SERVICES":
+        withWhat = onIt.split()[0]
+        modal.addstr(1, 2, f'KILLING SERVICE {who} .', curses.color_pair(1))
+        modal.addstr(3, 2, 'Are you sure?', curses.A_BOLD | curses.A_UNDERLINE)
+        modal.addstr(7, 2, 'Press ENTER to confirm')
+        modal.addstr(8, 2, 'Press q to cancel')
+        modal.addstr(10, 2, '')
+        modal.refresh()
+    elif family == "PORTS":
         modal.addstr(1, 2, "Enter separated by spaces ports that should be opened on the remote host: ")
         modal.addstr(7, 2, 'Press ENTER to confirm')
         modal.addstr(8, 2, 'Press q to cancel')
@@ -315,12 +337,7 @@ def display_modal(stdscr, message, height, width, host, port, username):
         ports = port_input.split(' ')
         
         get_port_info(host, port, username, *ports)
-    else:
-        modal.addstr(1, 2, f'KILLING {message} .', curses.color_pair(1))
-        modal.addstr(3, 2, 'Are you sure?', curses.A_BOLD | curses.A_UNDERLINE)
-        modal.addstr(7, 2, 'Press ENTER to confirm')
-        modal.addstr(8, 2, 'Press q to cancel')
-        modal.refresh()
+    
     
     ###################################################################
     ### Get user input:
@@ -330,13 +347,21 @@ def display_modal(stdscr, message, height, width, host, port, username):
     while True:
         key = stdscr.getch()
         if key == curses.KEY_ENTER or key == 10:
-            modal.addstr(5, 2, "SUCCESS", curses.A_BOLD)
+            if family == "USERS": 
+                run_shell_script("kill_login_session", host, port, username, withWhat)
+                modal.addstr(5, 2, f"SUCCESS", curses.A_BOLD)
+            if family == "SERVICES":
+                run_shell_script("kill_service_by_name", host, port, username, withWhat)
+                #---------------------------------------------------------------------------------
+                modal.addstr(5, 2, f"SUCCESS", curses.A_BOLD)
             modal.refresh()
         elif key == ord('q'):
             break
 
 script_paths = {
     "check_ports": "./modules/ports/check.sh",
+    "kill_service_by_name": "./modules/actions/kill_service_by_name.sh",
+    "kill_login_session": "./modules/actions/kill_login_session.sh",
 }
 
 def execute_command(command):
@@ -405,7 +430,7 @@ def run_shell_script(script_name, host, port, username, *args):
 
 
 def get_logged_in_users(host, port, username):
-    command = f'ssh -o StrictHostKeyChecking=no -p {port} {username}@{host} who'
+    command = f'ssh -o StrictHostKeyChecking=yes -p {port} {username}@{host} who'
     return execute_command(command)
 
 def get_running_services(host, port, username):

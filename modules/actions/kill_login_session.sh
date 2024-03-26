@@ -18,7 +18,9 @@ if [[ "$#" -gt 1 ]]; then
     exit 1
 fi
 
+echo "Host: $(hostname -I)"
 SCRIPT_EXECUTOR_ID=$(id -u)
+echo "Running script as $(whoami) with ID: $SCRIPT_EXECUTOR_ID"
 if [[ "$SCRIPT_EXECUTOR_ID" -ne 0 ]]; then
 	echo "Please run $0 as root"
 	echo "Exiting..."
