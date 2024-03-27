@@ -10,7 +10,18 @@ def main(stdscr):
     ###################################################################
     
     curses.curs_set(0)
-
+    
+    ###################################################################
+    ### ASCII art title adjusted in the middle of the screen
+    ###################################################################
+    title = [
+    "___________                         .__",
+    "\\__    ___/___   ____    ____  __ __|__|",
+    "  |    |_/ __ \\ /    \\  / ___\\|  |  \\  |",
+    "  |    |\\  ___/|   |  \\/ /_/  >  |  /  |",
+    "  |____| \\___  >___|  /\\___  /|____/|__|",
+    "             \\/     \\//_____/           "
+]
     ###################################################################
     ### Read from hosts file to retrieve desired hosts
     ### hosts file should be in the same directory as this script
@@ -38,8 +49,8 @@ def main(stdscr):
     ###################################################################
     
     selected_row = 0
-    display_menu(stdscr, hosts, selected_row)
-
+    display_menu(stdscr, hosts, selected_row, title)
+    
     ###################################################################
     ### Captures user input
     ### Keyboard keys UP and DOWN manage current_row
@@ -55,39 +66,24 @@ def main(stdscr):
         elif key == curses.KEY_DOWN:
             selected_row = min(len(hosts) - 1, selected_row + 1)
         elif key == curses.KEY_ENTER or key in [10, 13]:
-            host = hosts[selected_row]
-            username = usernames[selected_row]
-            port = ports[selected_row]
-            users = get_logged_in_users(host, port, username)
-            services = get_running_services(host, port, username)
-            ports_info = get_port_info(host, port, username)
-            display_info(stdscr, users, services, host, port, username)
+            if selected_row == 0: 
+                display_view_hosts_option(stdscr, hosts, ports, usernames, title)
+            else:
+                display_apply_scripts_option(stdscr, hosts, ports, usernames, title)
         elif key == ord('q'):
             break
 
-        display_menu(stdscr, hosts, selected_row)
+        display_menu(stdscr, hosts, selected_row, title)
         
 
         
-def display_menu(stdscr, hosts, selected_row):
+def display_menu(stdscr, hosts, selected_row, title):
     stdscr.clear()
     h, w = stdscr.getmaxyx()
-    
-    ###################################################################
-    ### ASCII art title adjusted in the middle of the screen
-    ###################################################################
-
-    title = [
-    "___________                         .__",
-    "\\__    ___/___   ____    ____  __ __|__|",
-    "  |    |_/ __ \\ /    \\  / ___\\|  |  \\  |",
-    "  |    |\\  ___/|   |  \\/ /_/  >  |  /  |",
-    "  |____| \\___  >___|  /\\___  /|____/|__|",
-    "             \\/     \\//_____/           "
-]
 
     title_x = w // 2 - len(title[0]) // 2
     title_y = 2
+    
     for i, line in enumerate(title):
         stdscr.addstr(title_y + i, title_x, line)
 
@@ -100,26 +96,169 @@ def display_menu(stdscr, hosts, selected_row):
     ### Displayed IPs are selectable and clickable
     ###################################################################
     
-    for i, host in enumerate(hosts):
-        x = w // 2 - len(host) // 2
-        y = h // 2 - len(hosts) // 2 + i
+    menu_options = ["VIEW INDIVIDUAL HOSTS", "APPLY SCRIPTS"]
+    for i, option in enumerate(menu_options):
+        x = w // 2 - len(option) // 2
+        y = h // 2 - len(menu_options) // 2 + i
         
         if i == selected_row:
-            stdscr.addstr(y, x, host, curses.A_REVERSE)
+            stdscr.addstr(y, x, option, curses.A_REVERSE)
         else:
-            stdscr.addstr(y, x, host)
+            stdscr.addstr(y, x, option)
 
     stdscr.refresh()
     
+def display_view_hosts_option(stdscr, hosts, ports, usernames, title):
+    stdscr.clear()
+    h, w = stdscr.getmaxyx()
+
+    title_x = w // 2 - len(title[0]) // 2
+    title_y = 2
+    
+    for i, line in enumerate(title):
+        stdscr.addstr(title_y + i, title_x, line)
+
+    selected_row = 0
+    bottom_message = f"Press 'q' to go back"
+    stdscr.addstr(h-2, 0, bottom_message, curses.A_BOLD)
+    
+    ###################################################################
+    ### Displays the menu options which currently are host IP
+    ### hosts file should contain IPs of desired hosts (IP per line)
+    ### Displayed IPs are selectable and clickable
+    ###################################################################
+    
+    
+            
+    while True:
+        for i, option in enumerate(hosts):
+            x = w // 2 - len(option) // 2
+            y = h // 2 - len(hosts) // 2 + i
+        
+            if i == selected_row:
+                stdscr.addstr(y, x, option, curses.A_REVERSE)
+            else:
+                stdscr.addstr(y, x, option)
+        
+        key = stdscr.getch()
+        
+        if i == selected_row:
+            stdscr.addstr(y, x, option, curses.A_REVERSE)
+        else:
+            stdscr.addstr(y, x, option)
+
+        if key == curses.KEY_UP:
+            selected_row = max(0, selected_row - 1)
+        elif key == curses.KEY_DOWN:
+            selected_row = min(len(hosts) - 1, selected_row + 1)
+        elif key == curses.KEY_ENTER or key in [10, 13]:
+            host = hosts[selected_row]
+            username = usernames[selected_row]
+            port = ports[selected_row]
+            ports_info = get_port_info(host, port, username)
+            display_info(stdscr, host, port, username)
+        elif key == ord('q'):
+            break
+
+        stdscr.clear()  # Clearing the screen before redrawing
+        
+        for i, line in enumerate(title):
+            stdscr.addstr(title_y + i, title_x, line)
+     
+        stdscr.addstr(h-2, 0, bottom_message, curses.A_BOLD)
+        stdscr.refresh()
+        
+def display_apply_scripts_option(stdscr, hosts, ports, usernames, title):
+    stdscr.clear()
+    h, w = stdscr.getmaxyx()
+
+    title_x = w // 2 - len(title[0]) // 2
+    title_y = 2
+    
+    for i, line in enumerate(title):
+        stdscr.addstr(title_y + i, title_x, line)
+
+    selected_row = 0
+    bottom_message = f"Press 'q' to go back (scripts1)"
+    stdscr.addstr(h-2, 0, bottom_message, curses.A_BOLD)
+    
+    ###################################################################
+    ### Displays the menu options which currently are host IP
+    ### hosts file should contain IPs of desired hosts (IP per line)
+    ### Displayed IPs are selectable and clickable
+    ###################################################################
+    
+    while True:
+        for i, option in enumerate(hosts):
+            x = w // 2 - len(option) // 2
+            y = h // 2 - len(hosts) // 2 + i
+        
+            if i == selected_row:
+                stdscr.addstr(y, x, option, curses.A_REVERSE)
+            else:
+                stdscr.addstr(y, x, option)
+
+        key = stdscr.getch()
+
+        if key == curses.KEY_UP:
+            selected_row = max(0, selected_row - 1)
+        elif key == curses.KEY_DOWN:
+            selected_row = min(len(hosts) - 1, selected_row + 1)
+        elif key == curses.KEY_ENTER or key in [10, 13]:
+            host = hosts[selected_row]
+            username = usernames[selected_row]
+            port = ports[selected_row]
+            display_script_menu(stdscr, host, port, username)
+        elif key == ord('q'):
+            break
+
+        stdscr.clear()  # Clearing the screen before redrawing
+        for i, line in enumerate(title):
+            stdscr.addstr(title_y + i, title_x, line)
+        stdscr.addstr(h-2, 0, bottom_message, curses.A_BOLD)
+        stdscr.refresh()
+        
+def display_script_menu(stdscr, host, port, username):
+    stdscr.clear()
+    h, w = stdscr.getmaxyx()
+
+    selected_row = 1
+    
+    bottom_message = f"Press 'q' to go back (scripts menu)"
+    stdscr.addstr(h-2, 0, bottom_message, curses.A_BOLD)
+    
+    check_ports_line = 1
+
+    stdscr.addstr(check_ports_line, 0, "CHECK PORTS", curses.A_NORMAL) 
+    if selected_row == check_ports_line:
+        stdscr.addstr(check_ports_line, 0, "CHECK PORTS", curses.A_REVERSE)    
+
+    while True:
+        key = stdscr.getch()
+
+        if key == curses.KEY_UP:
+            selected_row = max(1, selected_row - 1)
+        elif key == curses.KEY_DOWN:
+            selected_row = min(1, selected_row + 1)
+        elif key == curses.KEY_ENTER or key in [10, 13]:
+            display_modal(stdscr, '', 'PORTS', h, w, host, port, username)
+            pass
+        elif key == ord('q'):
+            break
+
+        stdscr.refresh()  
     
 
-def display_info(stdscr, users, services, host, port, username):
+def display_info(stdscr, host, port, username):
 
     ###################################################################
     ### Get user terminal max width and height to adjust TUI limits
     ###################################################################
-    
+    stdscr.refresh()
     h, w = stdscr.getmaxyx()
+    
+    users = get_logged_in_users(host, port, username)
+    services = get_running_services(host, port, username)
 
     ###################################################################
     ### Splits information into an array of strings based on line breaks
@@ -229,6 +368,7 @@ def display_info(stdscr, users, services, host, port, username):
         ### Display the pad content on the screen
         ### Adjust height to fit in the terminal, leave space for footer
         ###################################################################
+        
         pad.refresh(pad_pos, 0, 0, 0, h-3, w-1)
 
         ###################################################################
@@ -253,6 +393,7 @@ def display_info(stdscr, users, services, host, port, username):
         if key == curses.KEY_ENTER or key == 10:
             display_modal(stdscr, onIt, family, h, w, host, port, username)
             
+
 
 def find_selected_element(selected_row, users_lines, services_lines):
 
@@ -287,7 +428,8 @@ def display_modal(stdscr, onIt, family, height, width, host, port, username):
     ### Center the modal, place it on top of the pad
     ### modal_y and modal_x represent the top-left corner coordinates
     ###################################################################
-    who = onIt.split()[0]
+    if onIt != '':
+        who = onIt.split()[0]
     
     center_y = height // 2
     center_x = width // 2
@@ -331,7 +473,7 @@ def display_modal(stdscr, onIt, family, height, width, host, port, username):
         
 #       Get port numbers
         curses.echo()
-        stdscr.move(modal_y + 2, modal_x + 2)
+        stdscr.move(modal_y + 4, modal_x + 2)
         port_input = stdscr.getstr().decode()
         curses.noecho() 
         ports = port_input.split(' ')
@@ -442,8 +584,3 @@ def get_port_info(host, port, username, *args):
 
 if __name__ == "__main__":
     curses.wrapper(main)
-
-###################################################################
-### Tengui TUI author:
-### Martin Martijan
-###################################################################
