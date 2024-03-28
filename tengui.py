@@ -64,7 +64,10 @@ def main(stdscr):
         if key == curses.KEY_UP:
             selected_row = max(0, selected_row - 1)
         elif key == curses.KEY_DOWN:
-            selected_row = min(len(hosts) - 1, selected_row + 1)
+            if len(hosts) > 1:
+                selected_row = min(len(hosts)-1, selected_row + 1)
+            else:
+                selected_row = min(len(hosts), selected_row + 1)
         elif key == curses.KEY_ENTER or key in [10, 13]:
             if selected_row == 0: 
                 display_view_hosts_option(stdscr, hosts, ports, usernames, title)
@@ -87,7 +90,7 @@ def display_menu(stdscr, hosts, selected_row, title):
     for i, line in enumerate(title):
         stdscr.addstr(title_y + i, title_x, line)
 
-    bottom_message = f"Press 'q' to exit"
+    bottom_message = f"Press 'q' to exit, {selected_row}"
     stdscr.addstr(h-2, 0, bottom_message, curses.A_BOLD)
     
     ###################################################################
