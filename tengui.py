@@ -232,9 +232,11 @@ def display_script_menu(stdscr, host, port, username):
     
     check_ports_line = 1
     make_backups_line = 2
+    lynis_scan_line = 3
 
     stdscr.addstr(check_ports_line, 0, "CHECK PORTS", curses.A_NORMAL) 
     stdscr.addstr(make_backups_line, 0, "MAKE BACKUPS", curses.A_NORMAL) 
+    stdscr.addstr(lynis_scan_line, 0, "RUN LYNIS SCAN", curses.A_NORMAL) 
     if selected_row == check_ports_line:
         stdscr.addstr(check_ports_line, 0, "CHECK PORTS", curses.A_REVERSE)    
 
