@@ -45,11 +45,18 @@ python3 tengui.py
 
 ## Current functionality
 
-- Main menu displays all hosts from the hosts file
-- User key input tracking and navigation in the main menu
-- Functionality to click on a host from main menu and view information about it:
-  - Logged in users
-  - Currently running services
-- Navigating and selecting a user or service from inidividual host information to terminate remotely.
+- VIEW INDIVIDUAL HOSTS and APPLY SCRIPTS displays all hosts from the hosts file.
+- User key input tracking and navigation in the menu.
+- VIEW INDIVIDUAL HOSTS menu:
+  - List of hosts from the host file. Navigatable and clickable, when clicked will show info about this particular host: 
+    - Logged in users
+    - Currently running services
+  - All of the above mentioned processes are remotely terminatable - on ENTER click, a confirmation modal will appear to confirm service termination.
+- APPLY SCRIPTS menu:
+  - Unordered list of hosts from the host files. (TO DO: functionality to select several hosts, not only one for further actions)
+  - When host(s) are selected and ENTER pressed, a window to select which scripts to apply to them opens. The scripts include:
+    - CHECK PORTS: input which ports to check, or use default settings to see whether they are closed or opened and whether they should be opened, show warnings.
+    - MAKE BACKUPS: backs up files from a remote host using SCP.
+    - RUN LYNIS SCAN: copies files to remote. After scan returns logs which can be filtered to decide on future actions.
 
 
