@@ -231,8 +231,10 @@ def display_script_menu(stdscr, host, port, username):
     stdscr.addstr(h-2, 0, bottom_message, curses.A_BOLD)
     
     check_ports_line = 1
+    make_backups_line = 2
 
     stdscr.addstr(check_ports_line, 0, "CHECK PORTS", curses.A_NORMAL) 
+    stdscr.addstr(make_backups_line, 0, "MAKE BACKUPS", curses.A_NORMAL) 
     if selected_row == check_ports_line:
         stdscr.addstr(check_ports_line, 0, "CHECK PORTS", curses.A_REVERSE)    
 
