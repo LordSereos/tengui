@@ -369,8 +369,8 @@ def display_info(stdscr, host, port, username):
                     pad.addstr(i, 3, service)
 
         pad.addstr(len(users_lines) + len(services_lines) + 4, 0, f"Currently opened ports: {len(ports_lines)}")
-        for i, port in enumerate(ports_lines, start=len(services_lines) + 4):
-            if (i - 2) == selected_row:
+        for i, port in enumerate(ports_lines, start=len(services_lines) + len(users_lines) + 5):
+            if (i - 4) == selected_row:
                 pad.addstr(i, 0, f"[X]", curses.A_REVERSE)
                 if len(port) > w - 4:
                     truncated_port = port[:w - 4]
@@ -400,7 +400,7 @@ def display_info(stdscr, host, port, username):
         ### data where user thinks he is.
         ###################################################################
         
-        onIt, family = find_selected_element_in_host_info(selected_row, users_lines, services_lines)
+        onIt, family = find_selected_element_in_host_info(selected_row, users_lines, services_lines, ports_lines)
         
         bottom_message = f"Press 'q' to go back to the main menu, selected row is {selected_row}, onIt = {onIt.split()[0]+'                '} "
         stdscr.addstr(h-2, 0, bottom_message, curses.A_BOLD)
@@ -428,13 +428,13 @@ def display_info(stdscr, host, port, username):
             if selected_row < pad_pos:
                 pad_pos = selected_row
         elif key == curses.KEY_DOWN:
-            selected_row = min((len(users_lines)+len(services_lines)), selected_row + 1)
+            selected_row = min((len(users_lines)+len(services_lines)+len(ports_lines)), selected_row + 1)
             if selected_row >= pad_pos + h - 8:
                 pad_pos = min(selected_row - h + 8, total_height - h)
         if key == curses.KEY_ENTER or key == 10:
             confirmation_modal(stdscr, onIt, family, h, w, host, port, username)
             
-def find_selected_element_in_host_info(selected_row, users_lines, services_lines):
+def find_selected_element_in_host_info(selected_row, users_lines, services_lines, ports_lines):
 
     ###################################################################
     ### Mapping selected_row with real elements in lists, because when
@@ -444,10 +444,10 @@ def find_selected_element_in_host_info(selected_row, users_lines, services_lines
     ### but selected_row starts from 1.
     ###################################################################
     
-    selected_element = ''
+    selected_element = 'ABCDEFG'
     family = ''
     
-    if selected_row <= len(users_lines)+len(services_lines)+4:
+    if selected_row <= len(users_lines)+len(services_lines)+len(ports_lines)+6:
        if selected_row <= len(users_lines):
         selected_element = users_lines[selected_row-1]
         family = "USERS"
@@ -455,7 +455,7 @@ def find_selected_element_in_host_info(selected_row, users_lines, services_lines
         selected_element = services_lines[selected_row-len(users_lines)-1]
         family = "SERVICES"
        elif selected_row >= len(users_lines)+len(services_lines):
-        selected_element = "CHECK PORTS"
+        selected_element = ports_lines[selected_row-len(users_lines)-len(services_lines)-1]
         family = "PORTS"
 
     return selected_element, family
