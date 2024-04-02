@@ -289,6 +289,7 @@ def display_info(stdscr, host, port, username):
     
     users = get_logged_in_users(host, port, username)
     services = get_running_services(host, port, username)
+    ports = get_currently_opened_ports(host, port, username)
 
     ###################################################################
     ### Splits information into an array of strings based on line breaks.
@@ -296,6 +297,7 @@ def display_info(stdscr, host, port, username):
 
     users_lines = users.splitlines()
     services_lines = services.splitlines()
+    ports_lines = ports.splitlines()
     
     ###################################################################
     ### Total amount of selectable elements is going to be the sum
@@ -305,7 +307,7 @@ def display_info(stdscr, host, port, username):
     ###################################################################
     
     unintented_lines = 8
-    total_height = len(users_lines) + len(services_lines) + unintented_lines
+    total_height = len(users_lines) + len(services_lines) + len(ports_lines) + unintented_lines
 
     ###################################################################
     ### Initializes a scrollable pad for displaying information.
@@ -366,6 +368,23 @@ def display_info(stdscr, host, port, username):
                 else:
                     pad.addstr(i, 3, service)
 
+        pad.addstr(len(users_lines) + len(services_lines) + 4, 0, f"Currently opened ports: {len(ports_lines)}")
+        for i, port in enumerate(ports_lines, start=len(services_lines) + len(users_lines) + 5):
+            if (i - 4) == selected_row:
+                pad.addstr(i, 0, f"[X]", curses.A_REVERSE)
+                if len(port) > w - 4:
+                    truncated_port = port[:w - 4]
+                    pad.addstr(i, 3, truncated_port, curses.A_REVERSE)
+                else:
+                    pad.addstr(i, 3, port, curses.A_REVERSE)
+            else:
+                pad.addstr(i, 0, f"[X]")
+                if len(port) > w - 4: 
+                    truncated_port = port[:w - 4]
+                    pad.addstr(i, 3, truncated_port)
+                else:
+                    pad.addstr(i, 3, port)
+                    
         ###################################################################
         ### Display footer:
         ### Selected row and onIt are left for debugging.
@@ -381,7 +400,7 @@ def display_info(stdscr, host, port, username):
         ### data where user thinks he is.
         ###################################################################
         
-        onIt, family = find_selected_element_in_host_info(selected_row, users_lines, services_lines)
+        onIt, family = find_selected_element_in_host_info(selected_row, users_lines, services_lines, ports_lines)
         
         bottom_message = f"Press 'q' to go back to the main menu, selected row is {selected_row}, onIt = {onIt.split()[0]+'                '} "
         stdscr.addstr(h-2, 0, bottom_message, curses.A_BOLD)
@@ -409,13 +428,13 @@ def display_info(stdscr, host, port, username):
             if selected_row < pad_pos:
                 pad_pos = selected_row
         elif key == curses.KEY_DOWN:
-            selected_row = min((len(users_lines)+len(services_lines)), selected_row + 1)
+            selected_row = min((len(users_lines)+len(services_lines)+len(ports_lines)), selected_row + 1)
             if selected_row >= pad_pos + h - 8:
                 pad_pos = min(selected_row - h + 8, total_height - h)
         if key == curses.KEY_ENTER or key == 10:
             confirmation_modal(stdscr, onIt, family, h, w, host, port, username)
             
-def find_selected_element_in_host_info(selected_row, users_lines, services_lines):
+def find_selected_element_in_host_info(selected_row, users_lines, services_lines, ports_lines):
 
     ###################################################################
     ### Mapping selected_row with real elements in lists, because when
@@ -425,10 +444,10 @@ def find_selected_element_in_host_info(selected_row, users_lines, services_lines
     ### but selected_row starts from 1.
     ###################################################################
     
-    selected_element = ''
+    selected_element = 'ABCDEFG'
     family = ''
     
-    if selected_row <= len(users_lines)+len(services_lines)+4:
+    if selected_row <= len(users_lines)+len(services_lines)+len(ports_lines)+6:
        if selected_row <= len(users_lines):
         selected_element = users_lines[selected_row-1]
         family = "USERS"
@@ -436,7 +455,7 @@ def find_selected_element_in_host_info(selected_row, users_lines, services_lines
         selected_element = services_lines[selected_row-len(users_lines)-1]
         family = "SERVICES"
        elif selected_row >= len(users_lines)+len(services_lines):
-        selected_element = "CHECK PORTS"
+        selected_element = ports_lines[selected_row-len(users_lines)-len(services_lines)-1]
         family = "PORTS"
 
     return selected_element, family
@@ -720,6 +739,7 @@ script_paths = {
     "check_ports": "./modules/ports/check.sh",
     "kill_service_by_name": "./modules/actions/kill_service_by_name.sh",
     "kill_login_session": "./modules/actions/kill_login_session.sh",
+    "get_currently_opened_ports": "./modules/ports/check_currently_opened_ports.sh",
 }
 
 def run_shell_script(script_name, host, port, username, *args):
@@ -808,6 +828,9 @@ def get_logged_in_users(host, port, username):
 def get_running_services(host, port, username):
     command = f'ssh -o StrictHostKeyChecking=yes -p {port} {username}@{host} systemctl list-units --type=service --state=running | grep -v "LOAD   =" | grep -v "ACTIVE =" | grep -v "SUB    =" | grep -v "loaded units listed" | grep -v "^$" | grep -v "UNIT"' 
     return execute_command(command)
+
+def get_currently_opened_ports(host, port, username):
+    return run_shell_script("get_currently_opened_ports", host, port, username)
     
 def get_port_info(host, port, username, *args):
     return run_shell_script("check_ports", host, port, username, *args)
