@@ -370,15 +370,19 @@ def display_info(stdscr, host, port, username):
 
         pad.addstr(len(users_lines) + len(services_lines) + 4, 0, f"Currently opened ports: {len(ports_lines)}")
         for i, port in enumerate(ports_lines, start=len(services_lines) + len(users_lines) + 5):
-            if (i - 4) == selected_row:
-                pad.addstr(i, 0, f"[X]", curses.A_REVERSE)
+            if (i-4) == selected_row:
+                # Skip [X] prefix for the first element
+                if i != len(services_lines) + len(users_lines) + 5:
+                    pad.addstr(i, 0, f"[X]", curses.A_REVERSE)
                 if len(port) > w - 4:
                     truncated_port = port[:w - 4]
                     pad.addstr(i, 3, truncated_port, curses.A_REVERSE)
                 else:
                     pad.addstr(i, 3, port, curses.A_REVERSE)
             else:
-                pad.addstr(i, 0, f"[X]")
+                # Skip [X] prefix for the first element
+                if i != len(services_lines) + len(users_lines) + 5:
+                    pad.addstr(i, 0, f"[X]")
                 if len(port) > w - 4: 
                     truncated_port = port[:w - 4]
                     pad.addstr(i, 3, truncated_port)
@@ -444,7 +448,7 @@ def find_selected_element_in_host_info(selected_row, users_lines, services_lines
     ### but selected_row starts from 1.
     ###################################################################
     
-    selected_element = 'ABCDEFG'
+    selected_element = 'UNDEFINED'
     family = ''
     
     if selected_row <= len(users_lines)+len(services_lines)+len(ports_lines)+6:
@@ -676,7 +680,7 @@ def script_menu_modal(stdscr, family, height, width, host, port, username):
 
         port_input = ''
         ###################################################################
-        ### curses.scho() - enables character echoing, what is typed is 
+        ### curses.echo() - enables character echoing, what is typed is 
         ### showed.
         ### stdscr.move() - positions the cursor to a specific location on
         ### the modal.
@@ -700,8 +704,10 @@ def script_menu_modal(stdscr, family, height, width, host, port, username):
                 modal.refresh()
             elif key == ord('q'):
                 break
+            elif key == curses.KEY_BACKSPACE or key == 127:
+                port_input = port_input[:-1]
             elif is_numeric_char(key):
-                port_input += chr(key)  # Append numeric character to port_input
+                port_input += chr(key)
         
     ###################################################################
     ### for BACKUP and LYNIS connection with back end script logic 
@@ -709,17 +715,36 @@ def script_menu_modal(stdscr, family, height, width, host, port, username):
     ###################################################################
     
     if family == "BACKUP":
-        modal.addstr(1, 2, "Initiating backup script. ")
-        modal.addstr(7, 2, 'Press ENTER to confirm')
-        modal.addstr(8, 2, 'Press q to cancel')
-        modal.refresh()
+        directory_input = ''
         
-        while True:        
+        modal.addstr(1, 2, "Enter absolute paths of folders separated by spaces.")
+        modal.addstr(7, 2, 'Press ENTER to confirm')
+        
+        modal.refresh()
+         
+        while True:
+            curses.echo()
+            stdscr.move(modal_y + 4, modal_x + 2)
+            stdscr.clrtoeol() 
+            stdscr.addstr(modal_y + 4, modal_x + 2, directory_input)
+            curses.noecho()
+            modal.addstr(8, 2, 'Press q to go back')
+            
             key = stdscr.getch()
+            
             if key == curses.KEY_ENTER or key in [10, 13]:
-                pass
+                folders = directory_input.split()
+                run_backup_script(host, port, username, *folders)
+                modal.addstr(5, 2, f"Folders {folders} backed up!", curses.A_BOLD)
+                modal.addstr(8, 2, 'Press q to go back')
+                modal.refresh()
             elif key == ord('q'):
                 break
+            elif key == curses.KEY_BACKSPACE or key == 127:
+                directory_input = directory_input[:-1]
+            else:
+                directory_input += chr(key) 
+                modal.refresh()
                 
     if family == "LYNIS":
         modal.addstr(1, 2, "Initiating Lynis scan.")
@@ -828,7 +853,12 @@ def get_logged_in_users(host, port, username):
 def get_running_services(host, port, username):
     command = f'ssh -o StrictHostKeyChecking=yes -p {port} {username}@{host} systemctl list-units --type=service --state=running | grep -v "LOAD   =" | grep -v "ACTIVE =" | grep -v "SUB    =" | grep -v "loaded units listed" | grep -v "^$" | grep -v "UNIT"' 
     return execute_command(command)
-
+    
+def run_backup_script(host, port, username, *folders):
+    folders_str = ' '.join(folders)
+    command = f"./modules/backup/backupFiles.sh {username} {host} {port} {folders_str}"
+    return execute_command(command)
+    
 def get_currently_opened_ports(host, port, username):
     return run_shell_script("get_currently_opened_ports", host, port, username)
     
