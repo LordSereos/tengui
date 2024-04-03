@@ -755,7 +755,11 @@ def script_menu_modal(stdscr, family, height, width, host, port, username):
         while True:        
             key = stdscr.getch()
             if key == curses.KEY_ENTER or key in [10, 13]:
-                pass
+                modal.addstr(4, 2, 'Wait for the scan to finish, it might take couple of minutes...')
+                modal.refresh()
+                run_lynis(username, host, port)
+                modal.addstr(5, 2, 'SCAN FINISHED')
+                modal.refresh()
             elif key == ord('q'):
                 break
 
@@ -857,6 +861,10 @@ def get_running_services(host, port, username):
 def run_backup_script(host, port, username, *folders):
     folders_str = ' '.join(folders)
     command = f"./modules/backup/backupFiles.sh {username} {host} {port} {folders_str}"
+    return execute_command(command)
+    
+def run_lynis(username, host, port):
+    command = f"./modules/lynisCan/lynis.sh {username} {host} {port}"
     return execute_command(command)
     
 def get_currently_opened_ports(host, port, username):

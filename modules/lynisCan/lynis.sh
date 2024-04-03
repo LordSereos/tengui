@@ -9,9 +9,12 @@ fi
 username="$1"
 remote_host="$2"
 port="$3"
-local_directory="./reports/${remote_host}"
+local_directory="$(dirname "$(dirname "$0")")/lynisCan/reports/${remote_host}" 
+echo directory is 
+echo ${local_directory}
+absolute_path="$(cd "$(dirname "$0")" && pwd)"
 
-scp -P "$port" ./lynis-remote.tar.gz "${username}@${remote_host}:~/"
+scp -P "$port" "$absolute_path/lynis-remote.tar.gz" "${username}@${remote_host}:~/"
 
 ssh -T -q -p ${port} "${username}@${remote_host}" <<EOF
 mkdir -p ~/tmp-lynis &&
