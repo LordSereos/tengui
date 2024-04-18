@@ -223,7 +223,7 @@ def display_apply_scripts_option(stdscr, hosts, ports, usernames, title):
     ### display_apply_scripts_option() - secondary menu where user can
     ### view all hosts and select one or multiple to which to apply
     ### scripts or scans.
-    ##################################################################
+    ###################################################################
     
     stdscr.clear()
     h, w = stdscr.getmaxyx()
@@ -232,6 +232,26 @@ def display_apply_scripts_option(stdscr, hosts, ports, usernames, title):
     title_y = 2
 
     selected_row = 0
+    
+    ###################################################################
+    ### Using set to store unique host elements from hosts[] list and
+    ### use quick functions like .add and .remove to modify the set.
+    ###################################################################
+    
+    selected_hosts = set()
+    
+    ###################################################################
+    ### Initialize different colour pairings to distinguish selected
+    ### hosts from unselected and currently standing line.
+    ###
+    ### BLACK text on WHITE background - currently selected line, which
+    ### is reverse of pair 2 (curses.A_REVERSE).
+    ### GREEN text OR GREEN background - means that host is in the
+    ### set of selected hosts.
+    ###################################################################
+    
+    curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_GREEN)  # Selected host
+    curses.init_pair(2, curses.COLOR_WHITE, curses.COLOR_BLACK)  # Non-selected host
     
     while True:
         for i, line in enumerate(title):
@@ -246,18 +266,29 @@ def display_apply_scripts_option(stdscr, hosts, ports, usernames, title):
             y = h // 2 - len(hosts) // 2 + i
         
             if i == selected_row:
-                stdscr.addstr(y, x, option, curses.A_REVERSE)
+                if i in selected_hosts:
+                    stdscr.addstr(y, x, option, curses.color_pair(1) | curses.A_REVERSE)
+                else:
+                    stdscr.addstr(y, x, option, curses.color_pair(2) | curses.A_REVERSE)
+            elif i in selected_hosts:
+                stdscr.addstr(y, x, option, curses.color_pair(1))
             else:
-                stdscr.addstr(y, x, option)
+                stdscr.addstr(y, x, option, curses.color_pair(2))
                 
-        bottom_message = f"Press 'q' to go back to main menu, {selected_row}"
-        stdscr.addstr(h-2, 0, bottom_message, curses.A_BOLD)
+        bottom_message = f"Press 'q' to go back to main menu"
+        stdscr.addstr(h-4, 0, bottom_message, curses.A_BOLD)
+        bottom_message2 = f"Press 't' to toggle individual selection, current line: {selected_row}"
+        stdscr.addstr(h-3, 0, bottom_message2, curses.A_BOLD)
+        bottom_message2 = f"Press 'g' to toggle all host selection, selected hosts: {selected_hosts}"
+        stdscr.addstr(h-2, 0, bottom_message2, curses.A_BOLD)
         
         ###################################################################
         ### When host is selected (ENTER is pressed), a new window will
         ### be displayed with a list of scripts to be run on that host.
         ###
-        ### Currently doesn't support multiple host selection.
+        ### When more than one host is selected by pressing G (add all hosts) 
+        ### or T (add current host) and a set is formed, send that set to
+        ### the next menu and the sripts will work on multiple hosts.
         ################################################################### 
         
         key = stdscr.getch()
@@ -267,10 +298,25 @@ def display_apply_scripts_option(stdscr, hosts, ports, usernames, title):
         elif key == curses.KEY_DOWN:
             selected_row = min(len(hosts) - 1, selected_row + 1)
         elif key == curses.KEY_ENTER or key in [10, 13]:
-            host = hosts[selected_row]
-            username = usernames[selected_row]
-            port = ports[selected_row]
-            display_script_menu(stdscr, host, port, username)
+            if selected_hosts:  # If selected_hosts is not empty
+                 selected_hosts_info = [(hosts[i], usernames[i], ports[i]) for i in selected_hosts]
+                 selected_hostnames, usernames_list, ports_list = zip(*selected_hosts_info)
+                 display_script_menu(stdscr, selected_hostnames, usernames_list, ports_list)
+            else:
+                host = hosts[selected_row]
+                username = usernames[selected_row]
+                port = ports[selected_row]
+                display_script_menu(stdscr, [host], [port], [username])
+        elif key == ord('g') or key == ord('G'):
+            if len(selected_hosts) == len(hosts):
+                selected_hosts.clear()
+            else:
+                selected_hosts = set(range(len(hosts)))
+        elif key == ord('t') or key == ord('T'):
+            if selected_row in selected_hosts:
+                selected_hosts.remove(selected_row)
+            else:
+                selected_hosts.add(selected_row)
         elif key == ord('q'):
             break
 
@@ -551,7 +597,7 @@ def confirmation_modal(stdscr, onIt, family, height, width, host, port, username
         elif key == ord('q'):
             break 
         
-def display_script_menu(stdscr, host, port, username):
+def display_script_menu(stdscr, hosts, usernames, ports):
 
     ###################################################################
     ### display_script_menu() - final menu where user can view and
@@ -592,7 +638,7 @@ def display_script_menu(stdscr, host, port, username):
     ### is to run, a modal with different parameters will open.
     ###################################################################
     while True:
-        stdscr.addstr(1, 2, "Selected host amount to apply scripts: 1", curses.A_NORMAL) 
+        stdscr.addstr(1, 2, f"Selected hosts: {hosts}, usernames: {usernames}, ports: {ports}", curses.A_NORMAL)
         stdscr.addstr(script_x[0], w // 2 - len(script_lines[0]) // 2, script_lines[0], curses.A_NORMAL) 
         stdscr.addstr(script_x[1], w // 2 - len(script_lines[1]) // 2, script_lines[1], curses.A_NORMAL) 
         stdscr.addstr(script_x[2], w // 2 - len(script_lines[2]) // 2, script_lines[2], curses.A_NORMAL) 
@@ -615,11 +661,11 @@ def display_script_menu(stdscr, host, port, username):
             selected_row = min(7, selected_row + 2)
         elif key == curses.KEY_ENTER or key in [10, 13]:
             if selected_row == script_x[0]:
-                script_menu_modal(stdscr, 'PORTS', h, w, host, port, username)
+                script_menu_modal(stdscr, 'PORTS', h, w, hosts, ports, usernames)
             if selected_row == script_x[1]:
-                script_menu_modal(stdscr, 'BACKUP', h, w, host, port, username)
+                script_menu_modal(stdscr, 'BACKUP', h, w, hosts, ports, usernames)
             if selected_row == script_x[2]:
-                script_menu_modal(stdscr, 'LYNIS', h, w, host, port, username)
+                script_menu_modal(stdscr, 'LYNIS', h, w, hosts, ports, usernames)
         elif key == ord('q'):
             break
 
