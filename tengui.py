@@ -345,6 +345,11 @@ def display_info(stdscr, host, port, username):
     services_lines = services.splitlines()
     ports_lines = ports.splitlines()
     
+    all_families = []
+    all_families.extend(users_lines)
+    all_families.extend(services_lines)
+    all_families.extend(ports_lines)
+    
     ###################################################################
     ### Total amount of selectable elements is going to be the sum
     ### of all elements of different information lists plus unintended
@@ -352,7 +357,7 @@ def display_info(stdscr, host, port, username):
     ### of information is presented below.
     ###################################################################
     
-    unintented_lines = 8
+    unintented_lines = 8 + 1
     total_height = len(users_lines) + len(services_lines) + len(ports_lines) + unintented_lines
 
     ###################################################################
@@ -369,6 +374,7 @@ def display_info(stdscr, host, port, username):
     
     pad_pos = 0
     selected_row = 1
+    modal_visible = False
 
     while True:
         ###################################################################
@@ -380,15 +386,33 @@ def display_info(stdscr, host, port, username):
         ###################################################################
         ### Display users using get_logged_in_users() function.
         ###################################################################
-        
-        pad.addstr(0, 0, f"Logged in users: {len(users_lines)}")
+
+        users_section_start = 0
+        users_section_end = len(users_lines) + 1
+        curses.init_pair(1, curses.COLOR_YELLOW, curses.COLOR_BLACK)
+
+
+        # Draw a box around the users section
+        pad.attron(curses.color_pair(1))
+        pad.hline(users_section_start, 0, curses.ACS_HLINE, w)
+        pad.hline(users_section_end, 0, curses.ACS_HLINE, w)
+        pad.vline(users_section_start + 1, 0, curses.ACS_VLINE, users_section_end - users_section_start - 1)
+        pad.vline(users_section_start + 1, w - 1, curses.ACS_VLINE, users_section_end - users_section_start - 1)
+        pad.addch(users_section_start, 0, curses.ACS_ULCORNER)
+        pad.addch(users_section_start, w - 1, curses.ACS_URCORNER)
+        pad.addch(users_section_end, 0, curses.ACS_LLCORNER)
+        pad.addch(users_section_end, w - 1, curses.ACS_LRCORNER)
+        pad.addstr(users_section_start, 2, f"Logged-in users ({len(users_lines)})", curses.A_ITALIC | curses.color_pair(1))
+        pad.attroff(curses.color_pair(1))
+
+        # Add the users information inside the border
         for i, user in enumerate(users_lines, start=1):
             if i == selected_row:
-                pad.addstr(i, 0, "[X]", curses.A_REVERSE)
-                pad.addstr(i, 4, user, curses.A_REVERSE)
+                pad.addstr(i, 1, "[X]", curses.A_REVERSE)
+                pad.addstr(i, 5, user, curses.A_REVERSE)
             else:
-                pad.addstr(i, 0, "[X]")
-                pad.addstr(i, 4, user)
+                pad.addstr(i, 1, "[X]")
+                pad.addstr(i, 5, user)
         
         ###################################################################
         ### Display running services using get_running_services() function.
@@ -396,44 +420,75 @@ def display_info(stdscr, host, port, username):
         ### (i-2) is for not counting header and empty line in between lists
         ### Truncate long service names if they exceed terminal width.
         ###################################################################
-        
-        pad.addstr(len(users_lines) + 2, 0, f"Running services: {len(services_lines)}")
-        for i, service in enumerate(services_lines, start=len(users_lines) + 3):
-            if (i - 2) == selected_row:
-                pad.addstr(i, 0, f"[X]", curses.A_REVERSE)
-                if len(service) > w - 4:
-                    truncated_service = service[:w - 4]
-                    pad.addstr(i, 3, truncated_service, curses.A_REVERSE)
-                else:
-                    pad.addstr(i, 3, service, curses.A_REVERSE)
-            else:
-                pad.addstr(i, 0, f"[X]")
-                if len(service) > w - 4: 
-                    truncated_service = service[:w - 4]
-                    pad.addstr(i, 3, truncated_service)
-                else:
-                    pad.addstr(i, 3, service)
 
-        pad.addstr(len(users_lines) + len(services_lines) + 4, 0, f"Currently opened ports: {len(ports_lines)}")
+        services_section_start = users_section_end + 1
+        services_section_end = services_section_start + len(services_lines) + 1
+
+        # Draw a box around the services section
+        pad.attron(curses.color_pair(1))
+        pad.hline(services_section_start, 0, curses.ACS_HLINE, w)
+        pad.hline(services_section_end, 0, curses.ACS_HLINE, w)
+        pad.vline(services_section_start + 1, 0, curses.ACS_VLINE, services_section_end - services_section_start - 1)
+        pad.vline(services_section_start + 1, w - 1, curses.ACS_VLINE,
+                  services_section_end - services_section_start - 1)
+        pad.addch(services_section_start, 0, curses.ACS_ULCORNER)
+        pad.addch(services_section_start, w - 1, curses.ACS_URCORNER)
+        pad.addch(services_section_end, 0, curses.ACS_LLCORNER)
+        pad.addch(services_section_end, w - 1, curses.ACS_LRCORNER)
+        pad.addstr(services_section_start, 2, f"Running services ({len(services_lines)})", curses.A_ITALIC | curses.color_pair(1))
+        pad.attroff(curses.color_pair(1))
+
+        for i, service in enumerate(services_lines, start=services_section_start + 1):
+            if (i - 2) == selected_row:
+                pad.addstr(i, 1, f"[X]", curses.A_REVERSE)
+                if len(service) > w - 5:
+                    truncated_service = service[:w - 5]
+                    pad.addstr(i, 4, truncated_service, curses.A_REVERSE)
+                else:
+                    pad.addstr(i, 4, service, curses.A_REVERSE)
+            else:
+                pad.addstr(i, 1, f"[X]")
+                if len(service) > w - 5:
+                    truncated_service = service[:w - 5]
+                    pad.addstr(i, 4, truncated_service)
+                else:
+                    pad.addstr(i, 4, service)
+
+        ports_section_start = len(users_lines) + len(services_lines) + 4
+        ports_section_end = ports_section_start + len(ports_lines) + 1
+
+        # Draw a box around the ports section
+        pad.attron(curses.color_pair(1))
+        pad.hline(ports_section_start, 0, curses.ACS_HLINE, w)
+        pad.hline(ports_section_end, 0, curses.ACS_HLINE, w)
+        pad.vline(ports_section_start + 1, 0, curses.ACS_VLINE, ports_section_end - ports_section_start - 1)
+        pad.vline(ports_section_start + 1, w - 1, curses.ACS_VLINE, ports_section_end - ports_section_start - 1)
+        pad.addch(ports_section_start, 0, curses.ACS_ULCORNER)
+        pad.addch(ports_section_start, w - 1, curses.ACS_URCORNER)
+        pad.addch(ports_section_end, 0, curses.ACS_LLCORNER)
+        pad.addch(ports_section_end, w - 1, curses.ACS_LRCORNER)
+        pad.addstr(ports_section_start, 2, f"Currently opened ports ({len(ports_lines)})", curses.A_ITALIC | curses.color_pair(1))
+        pad.attroff(curses.color_pair(1))
+
         for i, port in enumerate(ports_lines, start=len(services_lines) + len(users_lines) + 5):
             if (i-4) == selected_row:
                 # Skip [X] prefix for the first element
                 if i != len(services_lines) + len(users_lines) + 5:
-                    pad.addstr(i, 0, f"[X]", curses.A_REVERSE)
-                if len(port) > w - 4:
-                    truncated_port = port[:w - 4]
-                    pad.addstr(i, 3, truncated_port, curses.A_REVERSE)
+                    pad.addstr(i, 1, f"[X]", curses.A_REVERSE)
+                if len(port) > w - 5:
+                    truncated_port = port[:w - 5]
+                    pad.addstr(i, 4, truncated_port, curses.A_REVERSE)
                 else:
-                    pad.addstr(i, 3, port, curses.A_REVERSE)
+                    pad.addstr(i, 4, port, curses.A_REVERSE)
             else:
                 # Skip [X] prefix for the first element
                 if i != len(services_lines) + len(users_lines) + 5:
-                    pad.addstr(i, 0, f"[X]")
-                if len(port) > w - 4: 
-                    truncated_port = port[:w - 4]
-                    pad.addstr(i, 3, truncated_port)
+                    pad.addstr(i, 1, f"[X]")
+                if len(port) > w - 5:
+                    truncated_port = port[:w - 5]
+                    pad.addstr(i, 4, truncated_port)
                 else:
-                    pad.addstr(i, 3, port)
+                    pad.addstr(i, 4, port)
                     
         ###################################################################
         ### Display footer:
@@ -451,15 +506,61 @@ def display_info(stdscr, host, port, username):
         ###################################################################
         
         onIt, family = find_selected_element_in_host_info(selected_row, users_lines, services_lines, ports_lines)
-        
-        bottom_message = f"Press 'q' to go back to the main menu, selected row is {selected_row}, onIt = {onIt.split()[0]+'                '} "
-        stdscr.addstr(h-2, 0, bottom_message, curses.A_BOLD)
+
+
+        #bottom_message = (f"Press 'q' to go back to the main menu, selected row is {selected_row}, "
+        #                  f"onIt = {onIt.split()[0] + '                '} ")
+        #bottom_message = (f"Press 'q' to go back to the main menu, selected row is {selected_row}, "
+        #                  f"pad_pos = {pad_pos}, modalVisible = {modal_visible}            ")
+        bottom_message = (f"Press 'h' to open context menu             ")
+        stdscr.addstr(h - 3, 0, " " * w)
+        stdscr.addstr(h - 2, 0, bottom_message, curses.A_BOLD)
+
+        def draw_modal(pad, pad_pos):
+            modal_width = 45
+            modal_height = 11
+            modal_text = ("Context information:"
+                          "\n\nSPACE - scroll whole page down"
+                          "\ny / Y - scroll whole page up\ng / G - scroll to next info tab"
+                          "\nb / B - scroll to previous info tab\n\nq / Q - go back to host list"
+                          "\nh / H - close context menu")
+            # Calculate the position to draw the modal (top-right corner)
+            modal_y = pad_pos+1
+            modal_x = pad.getmaxyx()[1] - modal_width - 1
+
+            for y in range(modal_y, modal_y + modal_height):
+                pad.addstr(y, modal_x, ' ' * modal_width)
+
+            # Create a window for the modal
+            modal_win = pad.subpad(modal_height, modal_width, modal_y, modal_x)
+
+            # Clear the area behind the modal
+
+            # Draw the box for the modal
+            curses.init_pair(2, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
+            modal_win.attron(curses.color_pair(2))
+            modal_win.box()
+
+            # Add the modal text inside the box
+            modal_text_lines = modal_text.split('\n')
+            for i, line in enumerate(modal_text_lines):
+                if i == 0:  # Skip applying bold to the first line
+                    modal_win.addstr(i + 1, 1, line[:modal_width - 2].ljust(modal_width - 2))
+                else:
+                    prefix = line[:5]
+                    suffix = line[5:]
+                    # Apply bold attribute to the prefix
+                    modal_win.addstr(i + 1, 1, prefix, curses.A_BOLD | curses.color_pair(2))
+                    # Add the remaining part of the line without bold attribute
+                    modal_win.addstr(suffix)
+            modal_win.attroff(curses.color_pair(2))
 
         ###################################################################
         ### Display the pad content on the screen.
         ### Adjust height to fit in the terminal, leave space for footer.
         ###################################################################
-        
+        if modal_visible:
+            draw_modal(pad, pad_pos)
         pad.refresh(pad_pos, 0, 0, 0, h-3, w-1)
 
         ###################################################################
@@ -469,18 +570,45 @@ def display_info(stdscr, host, port, username):
         ### DOWN  - change the selected row to one lower if possible.
         ### ENTER - open action confirmation modal.
         ###################################################################
-        
+
+        # pad_unintented_lines = h - shown_info
+
         key = stdscr.getch()
         if key == ord('q'):
             break
         if key == curses.KEY_UP:
             selected_row = max(1, selected_row - 1)
             if selected_row < pad_pos:
-                pad_pos = selected_row
+                pad_pos = selected_row - 1
         elif key == curses.KEY_DOWN:
             selected_row = min((len(users_lines)+len(services_lines)+len(ports_lines)), selected_row + 1)
-            if selected_row >= pad_pos + h - 8:
-                pad_pos = min(selected_row - h + 8, total_height - h)
+            if selected_row >= pad_pos + h - unintented_lines:
+                pad_pos = min(selected_row - h + unintented_lines, total_height - h)
+        if key == ord(' '):
+            selected_row = min((len(users_lines)+len(services_lines)+len(ports_lines)), pad_pos + h - 3)
+            pad_pos = min(total_height-h, h)
+        if key == ord('y') or key == ord('Y'):
+            selected_row = max(1, selected_row-h)
+            if selected_row <= pad_pos:
+                pad_pos = max(0, selected_row-1)
+        if key == ord('g') or key == ord('G'):
+            # Jump to the next family list
+            if family == "USERS":
+               selected_row = min((len(users_lines)+len(services_lines)+len(ports_lines)), len(users_lines)+1)
+            if family == "SERVICES":
+               selected_row = min((len(users_lines)+len(services_lines)+len(ports_lines)), len(users_lines)+len(services_lines)+1)
+            if selected_row >= pad_pos + h-6:
+                pad_pos = min(selected_row - h + 8, selected_row+3)
+        if key == ord('b') or key == ord('B'):
+            # Jump to the previous family list
+            if family == "SERVICES":
+               selected_row = 1
+            if family == "PORTS":
+               selected_row = len(users_lines)+1
+            if selected_row <= pad_pos:
+                pad_pos = max(0, selected_row-1)
+        if key == ord('h'):
+            modal_visible = not modal_visible
         if key == curses.KEY_ENTER or key == 10:
             confirmation_modal(stdscr, onIt, family, h, w, host, port, username)
             
@@ -527,7 +655,7 @@ def confirmation_modal(stdscr, onIt, family, height, width, host, port, username
     center_x = width // 2
     
     modal_height = 16
-    modal_width = width -10
+    modal_width = width - 10
     
     modal_y = center_y - modal_height // 2
     modal_x = center_x - modal_width // 2
