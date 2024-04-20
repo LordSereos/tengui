@@ -13,6 +13,10 @@ def main(stdscr):
     
     ###################################################################
     ### ASCII art title, will be used in several windows.
+    ###
+    ### Might add a check if terminal dimensions are small, instead of
+    ### showing a full scale title show smaller version or don't show
+    ### at all.
     ###################################################################
     
     title = [
@@ -23,13 +27,22 @@ def main(stdscr):
     "  |____| \\___  >___|  /\\___  /|____/|__|",
     "             \\/     \\//_____/           "
     ]
+    title2 = [
+        "░███████████                     ░████  ░███░████ ",
+        "░   ░███  ██████ ████████   ██████░███   ░██ ░███ ",
+        "    ░███ ███░███░░███░░███ ███░░██░███   ░██ ░███ ",
+        "    ░███░███░░░  ░███ ░███░███ ░██░███   ░██ ░███ ",
+        "    ████░░██████ ████ ████░░██████░█████████ ░███",
+        "   ░░░░░ ░░░░░░ ░░░░ ░░░░░ ░░░░░██░░░░░░░░░░  ░░░ ",
+        "                            ██████                "
+    ]
     
-    display_menu(stdscr, title)
+    display_menu(stdscr, title2)
        
 def display_menu(stdscr, title):
 
     ###################################################################
-    ### display_menu() - starting menu where user can select whether 
+    ### display_menu() - starting menu where user can select whether
     ### he wants to view some host information (VIEW INDIVIDUAL HOSTS),
     ### or apply scripts to one or several hosts (APPLY SCRIPTS).
     ###################################################################
@@ -39,6 +52,8 @@ def display_menu(stdscr, title):
     ### Used for displaying information dynamically according to the
     ### size of the window. Title will always be displayed in the top
     ### middle of each menu screen.
+    ###
+    ### TO DO: If terminal dimension are small, don't show title.
     ###################################################################
     
     h, w = stdscr.getmaxyx()
@@ -56,8 +71,8 @@ def display_menu(stdscr, title):
     ### Read from hosts file to retrieve desired hosts.
     ### 'hosts' file should be in the same directory as this script.
     ###
-    ### hosts - an array for host IP addresses.
-    ### ports - an array for host ssh port number.
+    ### hosts     - an array for host IP addresses.
+    ### ports     - an array for host ssh port number.
     ### usernames - an array for host connection usernames.
     ###################################################################
     
@@ -96,28 +111,75 @@ def display_menu(stdscr, title):
         ### Highlights currently selected menu option with curses.A_REVERSE
         ### font with the help of current_row which changes every time
         ### user moves UP or DOWN.
+        ###
+        ### Initializing main color theme of yellow+black for title and
+        ### information boxes.
         ###################################################################
-        
+
+        curses.init_pair(1, curses.COLOR_YELLOW, curses.COLOR_BLACK)
+
         for i, line in enumerate(title):
-            stdscr.addstr(title_y + i, title_x, line)
-            
+            stdscr.addstr(title_y + i, title_x, line, curses.color_pair(1))
+
+        ###################################################################
+        ### Adding border to the main menu options for better visual
+        ### effect. We need to draw 2 horizontal and 2 vertical lines
+        ### (vline and hline) around the area where options will be
+        ### displayed. .addch are corners for the box.
+        ###
+        ### box_start_y - top-left box corner on the y-axis.
+        ### box_end_y   - bottom-left box corner on the y-axis.
+        ### box_start_x - top-left box corner on the x-axis.
+        ### box_end_x   - right box corners on the x-axis.
+        ###
+        ### .attron()   - enables color theme for all text and lines.
+        ### .attroff()  - disables color theme from this line on.
+        ###################################################################
+
+        box_start_y = title_y + len(title) + 2
+        box_end_y = box_start_y + len(menu_options) + 3
+        box_start_x = (w - (2 * w // 3)) // 2  # (Centered horizontally)
+        box_end_x = 2 * w // 3
+
+        stdscr.attron(curses.color_pair(1))
+        stdscr.hline(box_start_y, box_start_x, curses.ACS_HLINE, box_end_x)
+        stdscr.hline(box_end_y, box_start_x, curses.ACS_HLINE, box_end_x)
+        stdscr.vline(box_start_y + 1, box_start_x, curses.ACS_VLINE, box_end_y - box_start_y - 1)
+        stdscr.vline(box_start_y + 1, box_start_x + box_end_x - 1, curses.ACS_VLINE,
+                     box_end_y - box_start_y - 1)
+
+        stdscr.addch(box_start_y, box_start_x, curses.ACS_ULCORNER)
+        stdscr.addch(box_start_y, box_start_x + box_end_x - 1, curses.ACS_URCORNER)
+        stdscr.addch(box_end_y, box_start_x, curses.ACS_LLCORNER)
+        stdscr.addch(box_end_y, box_start_x + box_end_x - 1, curses.ACS_LRCORNER)
+
+        header_text = "Main menu"
+        header_x = box_start_x + 2
+        stdscr.addstr(box_start_y, header_x, header_text, curses.A_ITALIC | curses.color_pair(1))
+        stdscr.attroff(curses.color_pair(1))
+
+        ###################################################################
+        ### Show the menu options inside the box.
+        ### We want contents to be centered and have margins from the box
+        ### lines.
+        ###################################################################
         for i, option in enumerate(menu_options):
-            x = w // 2 - len(option) // 2
-            y = h // 2 - len(menu_options) // 2 + i
-        
+            x = box_start_x + ((2 * w // 3) - len(option)) // 2  # (Centered horizontally)
+            y = box_start_y + i + 2
+
             if i == selected_row:
                 stdscr.addstr(y, x, option, curses.A_REVERSE)
             else:
                 stdscr.addstr(y, x, option)
-        
+
         ###################################################################
-        ### bottom_message is used a footer which always will be displayed
-        ### at the bottom of the screen. Reminds user of where he is or
-        ### how to go back.
+        ### footer_message is used as a footer which will always be
+        ### displayed at the bottom of the screen. Reminds user of useful
+        ### commands or how to open context menu (if applicable).
         ###################################################################
         
-        bottom_message = f"Press 'q' to exit, {selected_row}"   
-        stdscr.addstr(h-2, 0, bottom_message, curses.A_BOLD)
+        footer_message = f"Press 'q' to exit"
+        stdscr.addstr(h-2, 1, footer_message, curses.A_DIM | curses.A_ITALIC)
         
         ###################################################################
         ### User input capturing using keyboard:
@@ -514,7 +576,7 @@ def display_info(stdscr, host, port, username):
         #                  f"pad_pos = {pad_pos}, modalVisible = {modal_visible}            ")
         bottom_message = (f"Press 'h' to open context menu             ")
         stdscr.addstr(h - 3, 0, " " * w)
-        stdscr.addstr(h - 2, 0, bottom_message, curses.A_BOLD)
+        stdscr.addstr(h - 2, 0, bottom_message, curses.A_DIM | curses.A_ITALIC)
 
         def draw_modal(pad, pad_pos):
             modal_width = 45
