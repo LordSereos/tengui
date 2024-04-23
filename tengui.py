@@ -213,20 +213,22 @@ def display_menu(stdscr, title):
         elif key == curses.KEY_DOWN:
             selected_row = min(1, selected_row + 1)
         elif key == curses.KEY_ENTER or key in [10, 13]:
-            if selected_row == 0: 
-                display_view_hosts_option(stdscr, hosts, ports, usernames, title)
+            if selected_row == 0:
+                isReadOnly = True
             else:
-                display_apply_scripts_option(stdscr, hosts, ports, usernames, title)
+                isReadOnly = False
+            display_hosts_groups(stdscr, title, isReadOnly)
         elif key == ord('q'):
             break
         stdscr.clear()
         stdscr.refresh()
     
-def display_view_hosts_option(stdscr, hosts, ports, usernames, title):
+def display_hosts_groups(stdscr, title, isReadOnly):
 
     ###################################################################
-    ### display_view_hosts_option() - secondary menu where user can
-    ### view all hosts and select one for further inspection.
+    ### display_hosts_groups() - secondary menu where user can view
+    ### the group names and select one to see the hosts which are in
+    ### that group.
     ##################################################################
 
     stdscr.clear()
@@ -236,30 +238,87 @@ def display_view_hosts_option(stdscr, hosts, ports, usernames, title):
     title_y = 2
     
     selected_row = 0
-  
+
+    ###################################################################
+    ### Read from hosts file and determine groups and their hosts.
+    ###
+    ### groups['name']  - all names of the groups from hosts file.
+    ### groups['hosts'] - all hosts of particular groups['name'].
+    ###################################################################
+
+    groups = []
+    current_group = None
+
+    with open('hosts', 'r') as file:
+        for line in file:
+            line = line.strip()  # Remove leading/trailing whitespaces
+            if line.startswith("-"):
+                if current_group is not None:
+                    groups.append(current_group)
+                current_group = {'name': line[1:], 'hosts': []}
+            elif line:  # If the line is not empty
+                current_group['hosts'].append(line)
+
+        if current_group is not None:
+            groups.append(current_group)
+
+
+
+    # selected_hosts = set()
+
     while True:
+
+        curses.init_pair(1, curses.COLOR_YELLOW, curses.COLOR_BLACK)
         for i, line in enumerate(title):
-                stdscr.addstr(title_y + i, title_x, line)
+                stdscr.addstr(title_y + i, title_x, line, curses.color_pair(1))
                 
         ###################################################################
-        ### Menu items are previously extracted host IP addresses.
-        ###################################################################  
-          
-        for i, option in enumerate(hosts):
-            x = w // 2 - len(option) // 2
-            y = h // 2 - len(hosts) // 2 + i
-        
+        ### Menu items are host group names from the hosts file.
+        ###################################################################
+        box_start_y = title_y + len(title) + 2
+        box_end_y = box_start_y + len(groups) + 3
+        box_start_x = (w - (2 * w // 3)) // 2  # (Centered horizontally)
+        box_end_x = 2 * w // 3
+
+        stdscr.attron(curses.color_pair(1))
+        stdscr.hline(box_start_y, box_start_x, curses.ACS_HLINE, box_end_x)
+        stdscr.hline(box_end_y, box_start_x, curses.ACS_HLINE, box_end_x)
+        stdscr.vline(box_start_y + 1, box_start_x, curses.ACS_VLINE, box_end_y - box_start_y - 1)
+        stdscr.vline(box_start_y + 1, box_start_x + box_end_x - 1, curses.ACS_VLINE,
+                     box_end_y - box_start_y - 1)
+
+        stdscr.addch(box_start_y, box_start_x, curses.ACS_ULCORNER)
+        stdscr.addch(box_start_y, box_start_x + box_end_x - 1, curses.ACS_URCORNER)
+        stdscr.addch(box_end_y, box_start_x, curses.ACS_LLCORNER)
+        stdscr.addch(box_end_y, box_start_x + box_end_x - 1, curses.ACS_LRCORNER)
+
+        if (isReadOnly):
+            header_text = "View hosts"
+        else:
+            header_text = "Apply scripts"
+
+        header_x = box_start_x + 2
+        stdscr.addstr(box_start_y, header_x, header_text, curses.A_ITALIC | curses.color_pair(1))
+        stdscr.attroff(curses.color_pair(1))
+
+
+        for i, group in enumerate(groups):
+            y = box_start_y + i + 2
+            x = box_start_x + ((2 * w // 3) - len(group['name'])) // 2
+
             if i == selected_row:
-                stdscr.addstr(y, x, option, curses.A_REVERSE)
+                stdscr.addstr(y, x, group['name'], curses.A_REVERSE)
             else:
-                stdscr.addstr(y, x, option)
+                stdscr.addstr(y, x, group['name'])
+
+            y += 1
                  
-        bottom_message = f"Press 'q' to go back to the main menu, {selected_row}"   
-        stdscr.addstr(h-2, 0, bottom_message, curses.A_BOLD)
+        footer_message = f"Press 'q' to go back to the main menu"
+        stdscr.addstr(h-2, 1, footer_message, curses.A_DIM | curses.A_ITALIC)
         
         ###################################################################
-        ### When host is selected (ENTER is pressed), a new window will
-        ### be displayed with information about that host.
+        ### When group is selected (ENTER is pressed), a new window will
+        ### be displayed with all hosts of that group.
         ################################################################### 
          
         key = stdscr.getch()
@@ -267,26 +326,23 @@ def display_view_hosts_option(stdscr, hosts, ports, usernames, title):
         if key == curses.KEY_UP:
             selected_row = max(0, selected_row - 1)
         elif key == curses.KEY_DOWN:
-            selected_row = min(len(hosts) - 1, selected_row + 1)
+            selected_row = min(len(groups) - 1, selected_row + 1)
         elif key == curses.KEY_ENTER or key in [10, 13]:
-            host = hosts[selected_row]
-            username = usernames[selected_row]
-            port = ports[selected_row]
-            display_info(stdscr, host, port, username)
+            display_host_group_hosts(stdscr, groups[selected_row], title, isReadOnly)
         elif key == ord('q'):
             break
 
         stdscr.clear()
         stdscr.refresh()
-        
-def display_apply_scripts_option(stdscr, hosts, ports, usernames, title):
+
+
+def display_host_group_hosts(stdscr, group, title, isReadOnly):
 
     ###################################################################
-    ### display_apply_scripts_option() - secondary menu where user can
-    ### view all hosts and select one or multiple to which to apply
-    ### scripts or scans.
+    ### display_host_group_hosts() - submenu where user can select a
+    ### host from the chosen group for further inspection.
     ###################################################################
-    
+
     stdscr.clear()
     h, w = stdscr.getmaxyx()
 
@@ -294,91 +350,155 @@ def display_apply_scripts_option(stdscr, hosts, ports, usernames, title):
     title_y = 2
 
     selected_row = 0
-    
+
+    ###################################################################
+    ### From the lines of the group host extract explicitly host IP,
+    ### ssh port and username.
+    ###################################################################
+
+    hosts_ips = []
+    hosts_ports = []
+    hosts_usernames = []
+
+    for host in group['hosts']:
+        parts = host.split()
+        ip_address = parts[0]
+        port = parts[1]
+        username = parts[2]
+        hosts_ips.append(ip_address)
+        hosts_ports.append(port)
+        hosts_usernames.append(username)
+
     ###################################################################
     ### Using set to store unique host elements from hosts[] list and
     ### use quick functions like .add and .remove to modify the set.
     ###################################################################
-    
+
     selected_hosts = set()
-    
+
     ###################################################################
     ### Initialize different colour pairings to distinguish selected
     ### hosts from unselected and currently standing line.
     ###
-    ### BLACK text on WHITE background - currently selected line, which
+    ### GREEN text on BLACK background - currently selected line, which
     ### is reverse of pair 2 (curses.A_REVERSE).
     ### GREEN text OR GREEN background - means that host is in the
     ### set of selected hosts.
     ###################################################################
-    
-    curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_GREEN)  # Selected host
+
+    curses.init_pair(3, curses.COLOR_GREEN, curses.COLOR_BLACK)  # Selected host
     curses.init_pair(2, curses.COLOR_WHITE, curses.COLOR_BLACK)  # Non-selected host
-    
+
     while True:
+
+        curses.init_pair(1, curses.COLOR_YELLOW, curses.COLOR_BLACK)
         for i, line in enumerate(title):
-            stdscr.addstr(title_y + i, title_x, line)
-            
+            stdscr.addstr(title_y + i, title_x, line, curses.color_pair(1))
+
+        ###################################################################
+        ### Menu items are host group names from the hosts file.
+        ###################################################################
+
+        box_start_y = title_y + len(title) + 2
+        box_end_y = box_start_y + len(hosts_ips) + 3
+        box_start_x = (w - (2 * w // 3)) // 2  # (Centered horizontally)
+        box_end_x = 2 * w // 3
+
+        stdscr.attron(curses.color_pair(1))
+        stdscr.hline(box_start_y, box_start_x, curses.ACS_HLINE, box_end_x)
+        stdscr.hline(box_end_y, box_start_x, curses.ACS_HLINE, box_end_x)
+        stdscr.vline(box_start_y + 1, box_start_x, curses.ACS_VLINE, box_end_y - box_start_y - 1)
+        stdscr.vline(box_start_y + 1, box_start_x + box_end_x - 1, curses.ACS_VLINE,
+                     box_end_y - box_start_y - 1)
+
+        stdscr.addch(box_start_y, box_start_x, curses.ACS_ULCORNER)
+        stdscr.addch(box_start_y, box_start_x + box_end_x - 1, curses.ACS_URCORNER)
+        stdscr.addch(box_end_y, box_start_x, curses.ACS_LLCORNER)
+        stdscr.addch(box_end_y, box_start_x + box_end_x - 1, curses.ACS_LRCORNER)
+
+        if (isReadOnly):
+            header_text = f"View hosts | {group['name']}"
+        else:
+            header_text = f"Apply scripts | {group['name']}"
+        header_x = box_start_x + 2
+        stdscr.addstr(box_start_y, header_x, header_text, curses.A_ITALIC | curses.color_pair(1))
+        stdscr.attroff(curses.color_pair(1))
+
         ###################################################################
         ### Menu items are previously extracted host IP addresses.
         ###################################################################
-        
-        for i, option in enumerate(hosts):
-            x = w // 2 - len(option) // 2
-            y = h // 2 - len(hosts) // 2 + i
-        
+
+        for i, host in enumerate(hosts_ips):
+            y = box_start_y + i + 2
+            x = box_start_x + ((2 * w // 3) - len(host)) // 2
+
             if i == selected_row:
-                if i in selected_hosts:
-                    stdscr.addstr(y, x, option, curses.color_pair(1) | curses.A_REVERSE)
+                if (isReadOnly == False):
+                    if i in selected_hosts:
+                        stdscr.addstr(y, x, host, curses.color_pair(3) | curses.A_REVERSE)
+                    else:
+                        stdscr.addstr(y, x, host, curses.color_pair(2) | curses.A_REVERSE)
                 else:
-                    stdscr.addstr(y, x, option, curses.color_pair(2) | curses.A_REVERSE)
+                    stdscr.addstr(y, x, host, curses.A_REVERSE)
             elif i in selected_hosts:
-                stdscr.addstr(y, x, option, curses.color_pair(1))
+                stdscr.addstr(y, x, host, curses.color_pair(3))
             else:
-                stdscr.addstr(y, x, option, curses.color_pair(2))
-                
-        bottom_message = f"Press 'q' to go back to main menu"
-        stdscr.addstr(h-4, 0, bottom_message, curses.A_BOLD)
-        bottom_message2 = f"Press 't' to toggle individual selection, current line: {selected_row}"
-        stdscr.addstr(h-3, 0, bottom_message2, curses.A_BOLD)
-        bottom_message2 = f"Press 'g' to toggle all host selection, selected hosts: {selected_hosts}"
-        stdscr.addstr(h-2, 0, bottom_message2, curses.A_BOLD)
-        
+                if (isReadOnly == False):
+                    stdscr.addstr(y, x, host, curses.color_pair(2))
+                else:
+                    stdscr.addstr(y, x, host)
+            y += 1
+
+        if isReadOnly:
+            bottom_message = f"Press 'q' to go back to host groups"
+            stdscr.addstr(h - 2, 1, bottom_message, curses.A_ITALIC | curses.A_DIM)
+        else:
+            bottom_message = f"Press 'q' to go back to host groups"
+            stdscr.addstr(h - 4, 1, bottom_message, curses.A_ITALIC | curses.A_DIM)
+            bottom_message2 = f"Press 't' to toggle individual selection, current line: {selected_row}"
+            stdscr.addstr(h - 3, 1, bottom_message2, curses.A_ITALIC | curses.A_DIM)
+            bottom_message2 = f"Press 'g' to toggle all host selection, selected hosts: {selected_hosts}"
+            stdscr.addstr(h - 2, 1, bottom_message2, curses.A_ITALIC | curses.A_DIM)
+
         ###################################################################
         ### When host is selected (ENTER is pressed), a new window will
-        ### be displayed with a list of scripts to be run on that host.
-        ###
-        ### When more than one host is selected by pressing G (add all hosts) 
-        ### or T (add current host) and a set is formed, send that set to
-        ### the next menu and the sripts will work on multiple hosts.
-        ################################################################### 
-        
+        ### be displayed with information about that host.
+        ###################################################################
+
         key = stdscr.getch()
 
         if key == curses.KEY_UP:
             selected_row = max(0, selected_row - 1)
         elif key == curses.KEY_DOWN:
-            selected_row = min(len(hosts) - 1, selected_row + 1)
+            selected_row = min(len(hosts_ips) - 1, selected_row + 1)
         elif key == curses.KEY_ENTER or key in [10, 13]:
-            if selected_hosts:  # If selected_hosts is not empty
-                 selected_hosts_info = [(hosts[i], usernames[i], ports[i]) for i in selected_hosts]
-                 selected_hostnames, usernames_list, ports_list = zip(*selected_hosts_info)
-                 display_script_menu(stdscr, selected_hostnames, usernames_list, ports_list)
+            if isReadOnly:
+                host = hosts_ips[selected_row]
+                username = hosts_usernames[selected_row]
+                port = hosts_ports[selected_row]
+                display_info(stdscr, host, port, username)
             else:
-                host = hosts[selected_row]
-                username = usernames[selected_row]
-                port = ports[selected_row]
-                display_script_menu(stdscr, [host], [port], [username])
+                if selected_hosts:  # If selected_hosts is not empty
+                    selected_hosts_info = [(hosts_ips[i], hosts_usernames[i], hosts_ports[i]) for i in selected_hosts]
+                    selected_hostnames, usernames_list, ports_list = zip(*selected_hosts_info)
+                    display_script_menu(stdscr, selected_hostnames, usernames_list, ports_list)
+                else:
+                    host = hosts_ips[selected_row]
+                    username = hosts_usernames[selected_row]
+                    port = hosts_ports[selected_row]
+                    display_script_menu(stdscr, title, [host], [port], [username])
         elif key == ord('g') or key == ord('G'):
-            if len(selected_hosts) == len(hosts):
-                selected_hosts.clear()
-            else:
-                selected_hosts = set(range(len(hosts)))
+            if (isReadOnly == False):
+                if len(selected_hosts) == len(hosts_ips):
+                    selected_hosts.clear()
+                else:
+                    selected_hosts = set(range(len(hosts_ips)))
         elif key == ord('t') or key == ord('T'):
-            if selected_row in selected_hosts:
-                selected_hosts.remove(selected_row)
-            else:
-                selected_hosts.add(selected_row)
+            if (isReadOnly == False):
+                if selected_row in selected_hosts:
+                    selected_hosts.remove(selected_row)
+                else:
+                    selected_hosts.add(selected_row)
         elif key == ord('q'):
             break
 
@@ -787,7 +907,7 @@ def confirmation_modal(stdscr, onIt, family, height, width, host, port, username
         elif key == ord('q'):
             break 
         
-def display_script_menu(stdscr, hosts, usernames, ports):
+def display_script_menu(stdscr, title, hosts, usernames, ports):
 
     ###################################################################
     ### display_script_menu() - final menu where user can view and
@@ -805,8 +925,9 @@ def display_script_menu(stdscr, hosts, usernames, ports):
     ###
     ### We will not be able to jump to lesser rows.
     ###################################################################
-    
-    selected_row = 3
+    title_x = w // 2 - len(title[0]) // 2
+    title_y = 2
+    selected_row = title_y + len(title) + 4
     
     ###################################################################
     ### script_lines - an array with the names of the scripts that
@@ -818,7 +939,7 @@ def display_script_menu(stdscr, hosts, usernames, ports):
     ###################################################################
     
     script_lines = ["CHECK PORTS", "MAKE BACKUPS", "RUN LYNIS SCAN"]
-    script_x = [3, 5, 7]
+    script_x = [title_y + len(title) + 4, title_y + len(title) + 5, title_y + len(title) + 6]
       
     ###################################################################
     ### Displaying menu options, highlighting when current row matches.
@@ -828,10 +949,38 @@ def display_script_menu(stdscr, hosts, usernames, ports):
     ### is to run, a modal with different parameters will open.
     ###################################################################
     while True:
-        stdscr.addstr(1, 2, f"Selected hosts: {hosts}, usernames: {usernames}, ports: {ports}", curses.A_NORMAL)
-        stdscr.addstr(script_x[0], w // 2 - len(script_lines[0]) // 2, script_lines[0], curses.A_NORMAL) 
-        stdscr.addstr(script_x[1], w // 2 - len(script_lines[1]) // 2, script_lines[1], curses.A_NORMAL) 
-        stdscr.addstr(script_x[2], w // 2 - len(script_lines[2]) // 2, script_lines[2], curses.A_NORMAL) 
+
+        curses.init_pair(1, curses.COLOR_YELLOW, curses.COLOR_BLACK)
+
+        for i, line in enumerate(title):
+            stdscr.addstr(title_y + i, title_x, line, curses.color_pair(1))
+
+        box_start_y = title_y + len(title) + 2
+        box_end_y = box_start_y + len(script_lines) + 3
+        box_start_x = (w - (2 * w // 3)) // 2  # (Centered horizontally)
+        box_end_x = 2 * w // 3
+
+        stdscr.attron(curses.color_pair(1))
+        stdscr.hline(box_start_y, box_start_x, curses.ACS_HLINE, box_end_x)
+        stdscr.hline(box_end_y, box_start_x, curses.ACS_HLINE, box_end_x)
+        stdscr.vline(box_start_y + 1, box_start_x, curses.ACS_VLINE, box_end_y - box_start_y - 1)
+        stdscr.vline(box_start_y + 1, box_start_x + box_end_x - 1, curses.ACS_VLINE,
+                     box_end_y - box_start_y - 1)
+
+        stdscr.addch(box_start_y, box_start_x, curses.ACS_ULCORNER)
+        stdscr.addch(box_start_y, box_start_x + box_end_x - 1, curses.ACS_URCORNER)
+        stdscr.addch(box_end_y, box_start_x, curses.ACS_LLCORNER)
+        stdscr.addch(box_end_y, box_start_x + box_end_x - 1, curses.ACS_LRCORNER)
+
+        header_text = "Script menu"
+        header_x = box_start_x + 2
+        stdscr.addstr(box_start_y, header_x, header_text, curses.A_ITALIC | curses.color_pair(1))
+        stdscr.attroff(curses.color_pair(1))
+
+
+        stdscr.addstr(script_x[0], w // 2 - len(script_lines[0]) // 2, script_lines[0], curses.A_NORMAL)
+        stdscr.addstr(script_x[1], w // 2 - len(script_lines[1]) // 2, script_lines[1], curses.A_NORMAL)
+        stdscr.addstr(script_x[2], w // 2 - len(script_lines[2]) // 2, script_lines[2], curses.A_NORMAL)
         
         if selected_row == script_x[0]:
             stdscr.addstr(script_x[0], w // 2 - len(script_lines[0]) // 2, script_lines[0], curses.A_REVERSE)
@@ -841,14 +990,15 @@ def display_script_menu(stdscr, hosts, usernames, ports):
             stdscr.addstr(script_x[2], w // 2 - len(script_lines[2]) // 2, script_lines[2], curses.A_REVERSE)  
         
         bottom_message = f"Press 'q' to go back to all hosts, {selected_row}"
-        stdscr.addstr(h-2, 0, bottom_message, curses.A_BOLD)
+        stdscr.addstr(h-2, 1, f"Selected hosts: {hosts}, usernames: {usernames}, ports: {ports}", curses.A_ITALIC | curses.A_DIM)
+        stdscr.addstr(h-3, 1, bottom_message, curses.A_ITALIC | curses.A_DIM)
         
         key = stdscr.getch()
 
         if key == curses.KEY_UP:
-            selected_row = max(3, selected_row - 2)
+            selected_row = max(title_y + len(title) + 4, selected_row - 1)
         elif key == curses.KEY_DOWN:
-            selected_row = min(7, selected_row + 2)
+            selected_row = min(title_y + len(title) + 6, selected_row + 1)
         elif key == curses.KEY_ENTER or key in [10, 13]:
             if selected_row == script_x[0]:
                 script_menu_modal(stdscr, 'PORTS', h, w, hosts, ports, usernames)
