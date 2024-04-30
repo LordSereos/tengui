@@ -992,7 +992,7 @@ def display_script_menu(stdscr, title, hosts, usernames, ports):
         if selected_row == script_x[2]:
             stdscr.addstr(script_x[2], w // 2 - len(script_lines[2]) // 2, script_lines[2], curses.A_REVERSE)  
         
-        bottom_message = f"Press 'q' to go back to all hosts, {selected_row}"
+        bottom_message = f"Press 'q' to go back to all hosts"
         stdscr.addstr(h-2, 1, f"Selected hosts: {hosts}, usernames: {usernames}, ports: {ports}", curses.A_ITALIC | curses.A_DIM)
         stdscr.addstr(h-3, 1, bottom_message, curses.A_ITALIC | curses.A_DIM)
         
@@ -1106,8 +1106,9 @@ def script_menu_modal(stdscr, family, height, width, hosts, ports, usernames):
     if family == "BACKUP":
         directory_input = ''
         
-        modal.addstr(1, 2, "Enter absolute paths of folders separated by spaces.")
+        modal.addstr(1, 2, "Enter absolute paths of folders separated by spaces (ex. /home/user/testdir).")
         modal.addstr(9, 2, 'Press ENTER to confirm')
+        modal.addstr(10, 2, 'Press q to go back')
         
         modal.refresh()
          
