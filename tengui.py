@@ -335,7 +335,6 @@ def display_hosts_groups(stdscr, title, isReadOnly):
         stdscr.clear()
         stdscr.refresh()
 
-
 def display_host_group_hosts(stdscr, group, title, isReadOnly):
 
     ###################################################################
@@ -453,12 +452,15 @@ def display_host_group_hosts(stdscr, group, title, isReadOnly):
             bottom_message = f"Press 'q' to go back to host groups"
             stdscr.addstr(h - 2, 1, bottom_message, curses.A_ITALIC | curses.A_DIM)
         else:
-            bottom_message = f"Press 'q' to go back to host groups"
-            stdscr.addstr(h - 4, 1, bottom_message, curses.A_ITALIC | curses.A_DIM)
-            bottom_message2 = f"Press 't' to toggle individual selection, current line: {selected_row}"
-            stdscr.addstr(h - 3, 1, bottom_message2, curses.A_ITALIC | curses.A_DIM)
-            bottom_message2 = f"Press 'g' to toggle all host selection, selected hosts: {selected_hosts}"
-            stdscr.addstr(h - 2, 1, bottom_message2, curses.A_ITALIC | curses.A_DIM)
+            if (selected_hosts):
+                selected_hosts_info = [(hosts_ips[i], hosts_usernames[i], hosts_ports[i]) for i in selected_hosts]
+                selected_hostnames, usernames_list, ports_list = zip(*selected_hosts_info)
+                bottom_message = f"Press 'q' to go back to host groups, {ports_list}"
+                stdscr.addstr(h - 4, 1, bottom_message, curses.A_ITALIC | curses.A_DIM)
+                bottom_message2 = f"Press 't' to toggle individual selection, current line: {selected_row}"
+                stdscr.addstr(h - 3, 1, bottom_message2, curses.A_ITALIC | curses.A_DIM)
+                bottom_message2 = f"Press 'g' to toggle all host selection, selected hosts: {selected_hosts}"
+                stdscr.addstr(h - 2, 1, bottom_message2, curses.A_ITALIC | curses.A_DIM)
 
         ###################################################################
         ### When host is selected (ENTER is pressed), a new window will
@@ -481,7 +483,7 @@ def display_host_group_hosts(stdscr, group, title, isReadOnly):
                 if selected_hosts:  # If selected_hosts is not empty
                     selected_hosts_info = [(hosts_ips[i], hosts_usernames[i], hosts_ports[i]) for i in selected_hosts]
                     selected_hostnames, usernames_list, ports_list = zip(*selected_hosts_info)
-                    display_script_menu(stdscr, selected_hostnames, usernames_list, ports_list)
+                    display_script_menu(stdscr, title, selected_hostnames, usernames_list, ports_list)
                 else:
                     host = hosts_ips[selected_row]
                     username = hosts_usernames[selected_row]
@@ -585,6 +587,7 @@ def display_info(stdscr, host, port, username):
         pad.addch(users_section_end, 0, curses.ACS_LLCORNER)
         pad.addch(users_section_end, w - 1, curses.ACS_LRCORNER)
         pad.addstr(users_section_start, 2, f"Logged-in users ({len(users_lines)})", curses.A_ITALIC | curses.color_pair(1))
+        pad.addstr(users_section_start, w-2-len(host), host, curses.A_ITALIC | curses.color_pair(1))
         pad.attroff(curses.color_pair(1))
 
         # Add the users information inside the border
@@ -851,7 +854,7 @@ def confirmation_modal(stdscr, onIt, family, height, width, host, port, username
     modal = curses.newwin(modal_height, modal_width, modal_y, modal_x)
     modal.border()
     
-    curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
+    curses.init_pair(3, curses.COLOR_RED, curses.COLOR_BLACK)
     
     ###################################################################
     ### 'who' represents the specific element which will be terminated.
@@ -872,7 +875,7 @@ def confirmation_modal(stdscr, onIt, family, height, width, host, port, username
     
     if family == "USERS":
         withWhat = onIt.split()[1]
-        modal.addstr(1, 2, f'KILLING USER {who} .', curses.color_pair(1))
+        modal.addstr(1, 2, f'KILLING USER {who} .', curses.color_pair(3))
         modal.addstr(3, 2, 'Are you sure?', curses.A_BOLD | curses.A_UNDERLINE)
         modal.addstr(7, 2, 'Press ENTER to confirm')
         modal.addstr(8, 2, 'Press q to cancel')
@@ -880,7 +883,7 @@ def confirmation_modal(stdscr, onIt, family, height, width, host, port, username
         modal.refresh()
     if family == "SERVICES":
         withWhat = onIt.split()[0]
-        modal.addstr(1, 2, f'KILLING SERVICE {who} .', curses.color_pair(1))
+        modal.addstr(1, 2, f'KILLING SERVICE {who} .', curses.color_pair(3))
         modal.addstr(3, 2, 'Are you sure?', curses.A_BOLD | curses.A_UNDERLINE)
         modal.addstr(7, 2, 'Press ENTER to confirm')
         modal.addstr(8, 2, 'Press q to cancel')
@@ -1012,7 +1015,7 @@ def display_script_menu(stdscr, title, hosts, usernames, ports):
         stdscr.clear()
         stdscr.refresh()
 
-def script_menu_modal(stdscr, family, height, width, host, port, username):
+def script_menu_modal(stdscr, family, height, width, hosts, ports, usernames):
     
     ###################################################################
     ### script_menu_modal() - modal which will be called when some
@@ -1023,8 +1026,8 @@ def script_menu_modal(stdscr, family, height, width, host, port, username):
     center_y = height // 2
     center_x = width // 2
     
-    modal_height = 16
-    modal_width = width -10
+    modal_height = 12
+    modal_width = width - 10
     
     modal_y = center_y - modal_height // 2
     modal_x = center_x - modal_width // 2
@@ -1033,7 +1036,7 @@ def script_menu_modal(stdscr, family, height, width, host, port, username):
     modal = curses.newwin(modal_height, modal_width, modal_y, modal_x)
     modal.border()
     
-    curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
+    curses.init_pair(5, curses.COLOR_RED, curses.COLOR_BLACK)
     
     ###################################################################
     ### Depending on for which script this modal is, it will add
@@ -1046,8 +1049,8 @@ def script_menu_modal(stdscr, family, height, width, host, port, username):
     
     if family == "PORTS":
         modal.addstr(1, 2, "Enter ports separated by spaces that should be opened on the remote host")
-        modal.addstr(7, 2, 'Press ENTER to confirm')
-        modal.addstr(8, 2, 'Press q to cancel')
+        modal.addstr(9, 2, 'Press ENTER to confirm')
+        modal.addstr(10, 2, 'Press q to cancel')
         modal.refresh()
 
         ###################################################################
@@ -1084,9 +1087,9 @@ def script_menu_modal(stdscr, family, height, width, host, port, username):
             
             if key == curses.KEY_ENTER or key in [10, 13]:
                 ports = port_input.split()
-                get_port_info(host, port, username, *ports)
-                modal.addstr(5, 2, f"SUCCESS", curses.A_BOLD)
-                modal.addstr(8, 2, 'Press q to go back')
+                get_port_info(hosts, ports, usernames, *ports)
+                modal.addstr(7, 2, f"SUCCESS", curses.A_BOLD)
+                modal.addstr(10, 2, 'Press q to go back')
                 modal.refresh()
             elif key == ord('q'):
                 break
@@ -1104,7 +1107,7 @@ def script_menu_modal(stdscr, family, height, width, host, port, username):
         directory_input = ''
         
         modal.addstr(1, 2, "Enter absolute paths of folders separated by spaces.")
-        modal.addstr(7, 2, 'Press ENTER to confirm')
+        modal.addstr(9, 2, 'Press ENTER to confirm')
         
         modal.refresh()
          
@@ -1114,15 +1117,15 @@ def script_menu_modal(stdscr, family, height, width, host, port, username):
             stdscr.clrtoeol() 
             stdscr.addstr(modal_y + 4, modal_x + 2, directory_input)
             curses.noecho()
-            modal.addstr(8, 2, 'Press q to go back')
+            modal.addstr(10, 2, 'Press q to go back')
             
             key = stdscr.getch()
             
             if key == curses.KEY_ENTER or key in [10, 13]:
                 folders = directory_input.split()
-                run_backup_script(host, port, username, *folders)
-                modal.addstr(5, 2, f"Folders {folders} backed up!", curses.A_BOLD)
-                modal.addstr(8, 2, 'Press q to go back')
+                run_backup_script(hosts, ports, usernames, *folders)
+                modal.addstr(7, 2, f"Folders {folders} backed up!", curses.A_BOLD)
+                modal.addstr(10, 2, 'Press q to go back')
                 modal.refresh()
             elif key == ord('q'):
                 break
@@ -1134,8 +1137,8 @@ def script_menu_modal(stdscr, family, height, width, host, port, username):
                 
     if family == "LYNIS":
         modal.addstr(1, 2, "Initiating Lynis scan.")
-        modal.addstr(7, 2, 'Press ENTER to confirm')
-        modal.addstr(8, 2, 'Press q to cancel')
+        modal.addstr(9, 2, 'Press ENTER to confirm')
+        modal.addstr(10, 2, 'Press q to cancel')
         modal.refresh()
 
         while True:        
@@ -1143,8 +1146,8 @@ def script_menu_modal(stdscr, family, height, width, host, port, username):
             if key == curses.KEY_ENTER or key in [10, 13]:
                 modal.addstr(4, 2, 'Wait for the scan to finish, it might take couple of minutes...')
                 modal.refresh()
-                run_lynis(username, host, port)
-                modal.addstr(5, 2, 'SCAN FINISHED')
+                run_lynis(usernames, hosts, ports)
+                modal.addstr(7, 2, 'SCAN FINISHED')
                 modal.refresh()
             elif key == ord('q'):
                 break
@@ -1244,20 +1247,29 @@ def get_running_services(host, port, username):
     command = f'ssh -o StrictHostKeyChecking=yes -p {port} {username}@{host} systemctl list-units --type=service --state=running | grep -v "LOAD   =" | grep -v "ACTIVE =" | grep -v "SUB    =" | grep -v "loaded units listed" | grep -v "^$" | grep -v "UNIT"' 
     return execute_command(command)
     
-def run_backup_script(host, port, username, *folders):
+def run_backup_script(hosts, ports, usernames, *folders):
     folders_str = ' '.join(folders)
-    command = f"./modules/backup/backupFiles.sh {username} {host} {port} {folders_str}"
-    return execute_command(command)
+    for i, _ in enumerate(hosts):
+        command = f"./modules/backup/backupFiles.sh {usernames[i-1]} {hosts[i-1]} {ports[i-1]} {folders_str}"
+        print("i: " + hosts[i - 1])
+        execute_command(command)
+    return 0
     
-def run_lynis(username, host, port):
-    command = f"./modules/lynisCan/lynis.sh {username} {host} {port}"
-    return execute_command(command)
+def run_lynis(usernames, hosts, ports):
+    for i, _ in enumerate(hosts):
+        command = f"./modules/lynisCan/lynis.sh {usernames[i-1]} {hosts[i-1]} {ports[i-1]}"
+        print("Scanning: " + hosts[i - 1])
+        execute_command(command)
+    return 0
     
 def get_currently_opened_ports(host, port, username):
     return run_shell_script("get_currently_opened_ports", host, port, username)
     
-def get_port_info(host, port, username, *args):
-    return run_shell_script("check_ports", host, port, username, *args)
+def get_port_info(hosts, ports, usernames, *args):
+    for i, _ in enumerate(hosts):
+        run_shell_script("check_ports", hosts[i-1], ports[i-1], usernames[i-1], *args)
+        print("i: " + hosts[i-1] + " " + ports[i-1] + " " + usernames[i-1])
+    return 0
 
 if __name__ == "__main__":
     curses.wrapper(main)
