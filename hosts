@@ -1,2 +1,8 @@
-127.0.0.1 2222 tom
-127.0.0.1 2223 tom
+-ADMINISTRATORS
+192.168.204.5 22 martin
+192.168.204.6 444 testuser
+
+-USERS
+192.168.204.3 22 martin
+10.0.0.2 8006 xuser
+10.0.0.3 256 maxwell
