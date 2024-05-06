@@ -654,6 +654,7 @@ def display_info(stdscr, host, port, username):
         pad.addch(ports_section_end, w - 1, curses.ACS_LRCORNER)
         pad.addstr(ports_section_start, 2, f"Currently opened ports ({len(ports_lines)})", curses.A_ITALIC | curses.color_pair(1))
         pad.attroff(curses.color_pair(1))
+        
         for i, port_info in enumerate(ports_lines, start=len(services_lines) + len(users_lines) + 5):
             if (i-4) == selected_row:
                 # Skip [X] prefix for the first element
@@ -673,7 +674,6 @@ def display_info(stdscr, host, port, username):
                     pad.addstr(i, 4, truncated_port)
                 else:
                     pad.addstr(i, 4, port_info)
-        
         ###################################################################
         ### Display footer:
         ### Selected row and onIt are left for debugging.
@@ -1226,7 +1226,7 @@ def run_shell_script(script_name, host, port, username, *args):
             output_file.write(output)
         return output
     except Exception as e:
-        print("ErrorAAAAAAAA:", e)
+        print("Error", e)
         return None
     finally:
         if ssh_client:
@@ -1240,11 +1240,11 @@ def execute_command(command):
         return f"Error: {e.output}"
 
 def get_logged_in_users(host, port, username):
-    command = f'ssh -o StrictHostKeyChecking=no -p {port} {username}@{host} who'
+    command = f'ssh -o StrictHostKeyChecking=yes -p {port} {username}@{host} who'
     return execute_command(command)
 
 def get_running_services(host, port, username):
-    command = f'ssh -o StrictHostKeyChecking=no -p {port} {username}@{host} systemctl list-units --type=service --state=running | grep -v "LOAD   =" | grep -v "ACTIVE =" | grep -v "SUB    =" | grep -v "loaded units listed" | grep -v "^$" | grep -v "UNIT"' 
+    command = f'ssh -o StrictHostKeyChecking=yes -p {port} {username}@{host} systemctl list-units --type=service --state=running | grep -v "LOAD   =" | grep -v "ACTIVE =" | grep -v "SUB    =" | grep -v "loaded units listed" | grep -v "^$" | grep -v "UNIT"' 
     return execute_command(command)
     
 def run_backup_script(hosts, ports, usernames, *folders):
