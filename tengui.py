@@ -1,6 +1,7 @@
 import curses
 import subprocess
 import paramiko
+import functions
 
 def main(stdscr):
 
@@ -488,7 +489,7 @@ def display_host_group_hosts(stdscr, group, title, isReadOnly):
                     host = hosts_ips[selected_row]
                     username = hosts_usernames[selected_row]
                     port = hosts_ports[selected_row]
-                    display_script_menu(stdscr, title, [host], [port], [username])
+                    display_script_menu(stdscr, title, [host], [username], [port])
         elif key == ord('g') or key == ord('G'):
             if (isReadOnly == False):
                 if len(selected_hosts) == len(hosts_ips):
@@ -936,12 +937,27 @@ def display_script_menu(stdscr, title, hosts, usernames, ports):
     ### can be chosen. Will grow when new modules are added.
     ###
     ### script_x - an array containing x axis information of where to
-    ### place corresponding menu option. The rows are incrementory 
+    ### place corresponding menu option. The rows are incrementory
     ### by 2 so that they are not close together (for greater appeal).
     ###################################################################
     
     script_lines = ["CHECK PORTS", "MAKE BACKUPS", "RUN LYNIS SCAN"]
     script_x = [title_y + len(title) + 4, title_y + len(title) + 5, title_y + len(title) + 6]
+
+    ###################################################################
+    ### Below we initialize and assign values from our documentation
+    ### for each host which hosts should be open and which directories
+    ### should be backed up.
+    ###
+    ### It reads from doc_file where all of relevant information for
+    ### each host will be present.
+    ###################################################################
+
+    doc_ports = [[] for _ in range(len(hosts))]
+    doc_locations = [[] for _ in range(len(hosts))]
+    for i, host in enumerate(hosts):
+        doc_ports[i] = functions.get_elements_for_ip(host, "ports")
+        doc_locations[i] = functions.get_elements_for_ip(host, "copy_locations")
       
     ###################################################################
     ### Displaying menu options, highlighting when current row matches.
@@ -992,7 +1008,7 @@ def display_script_menu(stdscr, title, hosts, usernames, ports):
             stdscr.addstr(script_x[2], w // 2 - len(script_lines[2]) // 2, script_lines[2], curses.A_REVERSE)  
         
         bottom_message = f"Press 'q' to go back to all hosts"
-        stdscr.addstr(h-2, 1, f"Selected hosts: {hosts}, usernames: {usernames}, ports: {ports}", curses.A_ITALIC | curses.A_DIM)
+        stdscr.addstr(h-2, 1, f"Selected hosts: {hosts}, {doc_locations}", curses.A_ITALIC | curses.A_DIM)
         stdscr.addstr(h-3, 1, bottom_message, curses.A_ITALIC | curses.A_DIM)
         
         key = stdscr.getch()
@@ -1003,18 +1019,18 @@ def display_script_menu(stdscr, title, hosts, usernames, ports):
             selected_row = min(title_y + len(title) + 6, selected_row + 1)
         elif key == curses.KEY_ENTER or key in [10, 13]:
             if selected_row == script_x[0]:
-                script_menu_modal(stdscr, 'PORTS', h, w, hosts, ports, usernames)
+                script_menu_modal(stdscr, 'PORTS', h, w, hosts, ports, usernames, doc_ports, doc_locations)
             if selected_row == script_x[1]:
-                script_menu_modal(stdscr, 'BACKUP', h, w, hosts, ports, usernames)
+                script_menu_modal(stdscr, 'BACKUP', h, w, hosts, ports, usernames, doc_ports, doc_locations)
             if selected_row == script_x[2]:
-                script_menu_modal(stdscr, 'LYNIS', h, w, hosts, ports, usernames)
+                script_menu_modal(stdscr, 'LYNIS', h, w, hosts, ports, usernames, doc_ports, doc_locations)
         elif key == ord('q'):
             break
 
         stdscr.clear()
         stdscr.refresh()
 
-def script_menu_modal(stdscr, family, height, width, hosts, ports, usernames):
+def script_menu_modal(stdscr, family, height, width, hosts, ports, usernames, doc_ports, doc_locations):
     
     ###################################################################
     ### script_menu_modal() - modal which will be called when some
@@ -1045,9 +1061,9 @@ def script_menu_modal(stdscr, family, height, width, hosts, ports, usernames):
     ### is determined based on which row the user was when ENTER was
     ### pressed in the script menu.
     ###################################################################
-    
+
     if family == "PORTS":
-        modal.addstr(1, 2, "Enter ports separated by spaces that should be opened on the remote host")
+        modal.addstr(1, 2, f"Enter ports separated by spaces that should be opened on the remote host")
         modal.addstr(9, 2, 'Press ENTER to confirm')
         modal.addstr(10, 2, 'Press q to cancel')
         modal.refresh()
@@ -1085,8 +1101,11 @@ def script_menu_modal(stdscr, family, height, width, hosts, ports, usernames):
             key = stdscr.getch()
             
             if key == curses.KEY_ENTER or key in [10, 13]:
-                ports = port_input.split()
-                get_port_info(hosts, ports, usernames, *ports)
+                if port_input == '':
+                    get_port_info(hosts, ports, usernames, *doc_ports)
+                else:
+                    portsss = port_input.split()
+                    get_port_info(hosts, ports, usernames, *portsss)
                 modal.addstr(7, 2, f"SUCCESS", curses.A_BOLD)
                 modal.addstr(10, 2, 'Press q to go back')
                 modal.refresh()
@@ -1122,9 +1141,12 @@ def script_menu_modal(stdscr, family, height, width, hosts, ports, usernames):
             key = stdscr.getch()
             
             if key == curses.KEY_ENTER or key in [10, 13]:
-                folders = directory_input.split()
-                run_backup_script(hosts, ports, usernames, *folders)
-                modal.addstr(7, 2, f"Folders {folders} backed up!", curses.A_BOLD)
+                if directory_input == '':
+                    run_backup_script(hosts, ports, usernames, *doc_locations)
+                else:
+                    folders = directory_input.split()
+                    run_backup_script(hosts, ports, usernames, *folders)
+                modal.addstr(7, 2, "Folders backed up!", curses.A_BOLD)
                 modal.addstr(10, 2, 'Press q to go back')
                 modal.refresh()
             elif key == ord('q'):
@@ -1248,8 +1270,9 @@ def get_running_services(host, port, username):
     return execute_command(command)
     
 def run_backup_script(hosts, ports, usernames, *folders):
-    folders_str = ' '.join(folders)
+
     for i, _ in enumerate(hosts):
+        folders_str = ' '.join(folders[i-1])
         command = f"./modules/backup/backupFiles.sh {usernames[i-1]} {hosts[i-1]} {ports[i-1]} {folders_str}"
         print("i: " + hosts[i - 1])
         execute_command(command)
@@ -1266,8 +1289,9 @@ def get_currently_opened_ports(host, port, username):
     return run_shell_script("get_currently_opened_ports", host, port, username)
     
 def get_port_info(hosts, ports, usernames, *args):
+    print(args)
     for i, _ in enumerate(hosts):
-        run_shell_script("check_ports", hosts[i-1], ports[i-1], usernames[i-1], *args)
+        run_shell_script("check_ports", hosts[i-1], ports[i-1], usernames[i-1], *args[i-1])
         print("i: " + hosts[i-1] + " " + ports[i-1] + " " + usernames[i-1])
     return 0
 

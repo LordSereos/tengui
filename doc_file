@@ -1,0 +1,9 @@
+192.168.204.5:
+  ports: [22, 80, 443]
+  copy_locations: ["/home/martin/test", "/home/martin/test2"]
+  users: [martin, martha]
+
+192.168.204.3:
+  ports: [218, 833, 666]
+  copy_locations: ["/home/martin/test3", "/home/martin/test4"]
+  users: [martin]
