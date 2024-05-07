@@ -450,7 +450,7 @@ def display_host_group_hosts(stdscr, group, title, isReadOnly):
             y += 1
 
         if isReadOnly:
-            bottom_message = f"Press 'q' to go back to host groups"
+            bottom_message = f"Press 'q' to go back to host groups, {hosts_ips[selected_row]} {hosts_usernames[selected_row]} {hosts_ports[selected_row]}"
             stdscr.addstr(h - 2, 1, bottom_message, curses.A_ITALIC | curses.A_DIM)
         else:
             if (selected_hosts):
@@ -529,11 +529,6 @@ def display_info(stdscr, host, port, username):
     users_lines = users.splitlines()
     services_lines = services.splitlines()
     ports_lines = ports.splitlines()
-    
-    all_families = []
-    all_families.extend(users_lines)
-    all_families.extend(services_lines)
-    all_families.extend(ports_lines)
     
     ###################################################################
     ### Total amount of selectable elements is going to be the sum
@@ -697,7 +692,7 @@ def display_info(stdscr, host, port, username):
         #                  f"onIt = {onIt.split()[0] + '                '} ")
         #bottom_message = (f"Press 'q' to go back to the main menu, selected row is {selected_row}, "
         #                  f"pad_pos = {pad_pos}, modalVisible = {modal_visible}            ")
-        bottom_message = (f"Press 'h' to open context menu             ")
+        bottom_message = (f"Press 'h' to open context menu                                , {len(ports_lines)} {host} {port} {username}")
         stdscr.addstr(h - 3, 0, " " * w)
         stdscr.addstr(h - 2, 0, bottom_message, curses.A_DIM | curses.A_ITALIC)
 
