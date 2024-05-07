@@ -1263,6 +1263,11 @@ def get_logged_in_users(host, port, username):
 def get_running_services(host, port, username):
     command = f'ssh -o StrictHostKeyChecking=yes -p {port} {username}@{host} systemctl list-units --type=service --state=running | grep -v "LOAD   =" | grep -v "ACTIVE =" | grep -v "SUB    =" | grep -v "loaded units listed" | grep -v "^$" | grep -v "UNIT"' 
     return execute_command(command)
+
+def get_currently_opened_ports(host, port, username):
+    command = f'ssh -o StrictHostKeyChecking=no -p {port} {username}@{host} sudo lsof -i -P -n'
+    return execute_command(command)
+    #return run_shell_script("get_currently_opened_ports", host, port, username)
     
 def run_backup_script(hosts, ports, usernames, *folders):
 
@@ -1279,10 +1284,7 @@ def run_lynis(usernames, hosts, ports):
         print("Scanning: " + hosts[i - 1])
         execute_command(command)
     return 0
-    
-def get_currently_opened_ports(host, port, username):
-    return run_shell_script("get_currently_opened_ports", host, port, username)
-    
+
 def get_port_info(hosts, ports, usernames, *args):
     print(args)
     for i, _ in enumerate(hosts):
