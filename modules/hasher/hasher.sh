@@ -11,8 +11,6 @@ changelog="${local_dir}changelog"
 
 mkdir -p "$local_dir"
 touch $changelog
-file="${local_dir}/file.info"
-touch "$file"
 
 for location in "${hash_locations[@]}"; do
     loc_edit=$(echo "$location" | sed 's/\//_/g')
