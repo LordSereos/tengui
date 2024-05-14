@@ -1,45 +1,56 @@
 #!/bin/bash
-#
-#HASH ALL -> SEND HOME -> GET RID OF EVIDENCE
 
+username="$1"
+remote_host="$2"
+port="$3"
+shift 3
 hash_locations=("$@")
-local_dir="./hashes/"
+local_dir="/home/tom/MEGA/treciasKursas/tengui/modules/hasher/${remote_host}/"
 timestamp=$(date +%m%d_%H%M)
-
-remote_user=tom
-remote_port=22
-remote_host=192.168.1.188
-local_host=$(ip route get 1.2.3.4 | awk '{print $7}')
-remote_dest="/home/tom/incoming/${local_host}/"
+changelog="${local_dir}changelog"
 
 mkdir -p "$local_dir"
+touch $changelog
+file="${local_dir}/file.info"
+touch "$file"
 
-for path in "${hash_locations[@]}"; do
-   file_list=()
-    
-   while IFS= read -r file; do
-      file_list+=("$file")
-   done < <(find "$path" -type f)
-   
-   for file in "${file_list[@]}"; do
-      pathname=$(echo "$path" | tr '/' '_')
-      filename=$(echo "$file" | tr '/' '_')
-      local_dest="${local_dir}${filename}.hash"
-      hash=$(md5sum "$file" | awk '{print $1}')
-      echo "$hash" > "${local_dest}"
-   done
+for location in "${hash_locations[@]}"; do
+    loc_edit=$(echo "$location" | sed 's/\//_/g')
+    local_dest="${local_dir}${loc_edit}-${timestamp}.hashes"
+    touch "$local_dest"
 
-   tar_file=${pathname}@hashes_${timestamp}.tar
-   tar cvf "${tar_file}" -C ${local_dir} .
+    ssh_command="sudo find \"$location\" -type f | xargs sudo md5sum | awk '{print \$2 \" - \" \$1}'"
+    ssh "$username@$remote_host" "$ssh_command" >> "$local_dest"
 
-   rsync -e "ssh -p ${remote_port}" ${tar_file} ${remote_user}@${remote_host}:${remote_dest}
+    hash_files=($(find "$local_dir" -maxdepth 1 -type f -name "${loc_edit}*.hashes"))
+    num_files=${#hash_files[@]}
 
-   rm -rf ${local_dir}
-   rm -f ${tar_file}
+    if [ $num_files -gt 2 ]; then
+        oldest_file=${hash_files[0]}
+        oldest_timestamp=$(basename "$oldest_file" | grep -oP '\d{4}_\d{4}' | sed 's/_//')
+        
+        for hash_file in "${hash_files[@]}"; do
+            current_timestamp=$(basename "$hash_file" | grep -oP '\d{4}_\d{4}' | sed 's/_//')
+            if [ "$current_timestamp" -lt "$oldest_timestamp" ]; then
+                oldest_timestamp="$current_timestamp"
+                oldest_file="$hash_file"
+            fi
+        done
+        rm $oldest_file
 
-   sh ./differ.sh ${tar_file} ${remote_dest} ${timestamp}
+        diff_files=()
 
+        for hash_file in ${local_dir}${loc_edit}*.hashes; do
+            diff_files+=("$hash_file")
+        done
+
+        diff_output=$(diff -c "${diff_files[0]}" "${diff_files[1]}")
+        echo "$diff_output" >> $changelog
+    fi
 done
+
+
+
 
 
 

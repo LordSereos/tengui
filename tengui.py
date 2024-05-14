@@ -1317,7 +1317,7 @@ def run_backup_script(hosts, ports, usernames, *folders):
 
     for i, _ in enumerate(hosts):
         folders_str = ' '.join(folders[i-1])
-        command = f"./modules/hasher/hasher.sh {usernames[i-1]} {hosts[i-1]} {ports[i-1]} {folders_str}"
+        command = f"./modules/backup/backupFiles.sh {usernames[i-1]} {hosts[i-1]} {ports[i-1]} {folders_str}"
         print("i: " + hosts[i - 1])
         execute_command(command)
     return 0
@@ -1332,8 +1332,12 @@ def run_lynis(usernames, hosts, ports):
 def run_manifest_script(hosts, ports, usernames, *folders):
     print(folders)
     for i, _ in enumerate(hosts):
-        run_shell_script("hasher", hosts[i - 1], ports[i - 1], usernames[i - 1], *folders[i - 1])
-        print("i: " + hosts[i - 1] + " " + ports[i - 1] + " " + usernames[i - 1])
+        #run_shell_script("hasher", hosts[i - 1], ports[i - 1], usernames[i - 1], *folders[i - 1])
+        folders_str = ' '.join(folders[i-1])
+        command = f"./modules/hasher/hasher.sh {usernames[i-1]} {hosts[i-1]} {ports[i-1]} {folders_str}"
+        #print("i: " + hosts[i - 1] + " " + ports[i - 1] + " " + usernames[i - 1])
+        print("Hshng: " + hosts[i - 1])
+        execute_command(command)
     return 0
 
 def get_port_info(hosts, ports, usernames, *args):
