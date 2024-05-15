@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 username="$1"
 remote_host="$2"
