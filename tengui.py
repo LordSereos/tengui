@@ -936,8 +936,8 @@ def display_script_menu(stdscr, title, hosts, usernames, ports):
     ### by 2 so that they are not close together (for greater appeal).
     ###################################################################
     
-    script_lines = ["CHECK PORTS", "MAKE BACKUPS", "RUN LYNIS SCAN", "MANIFEST"]
-    script_x = [title_y + len(title) + 4, title_y + len(title) + 5, title_y + len(title) + 6, title_y + len(title) + 7]
+    script_lines = ["CHECK PORTS", "MAKE BACKUPS", "RUN LYNIS SCAN", "MANIFEST", "CHKROOTKIT", "AUDIT SETUP", "AUDIT RETRIEVAL"]
+    script_x = [title_y + len(title) + 4, title_y + len(title) + 5, title_y + len(title) + 6, title_y + len(title) + 7, title_y + len(title) + 8, title_y + len(title) + 9, title_y + len(title) + 10]
 
     ###################################################################
     ### Below we initialize and assign values from our documentation
@@ -951,10 +951,14 @@ def display_script_menu(stdscr, title, hosts, usernames, ports):
     doc_ports = [[] for _ in range(len(hosts))]
     doc_locations = [[] for _ in range(len(hosts))]
     doc_manifests = [[] for _ in range(len(hosts))]
+    doc_chkrootkit = [[] for _ in range(len(hosts))]
+    doc_audit = [[] for _ in range(len(hosts))]
     for i, host in enumerate(hosts):
         doc_ports[i] = functions.get_elements_for_ip(host, "ports")
         doc_locations[i] = functions.get_elements_for_ip(host, "copy_locations")
         doc_manifests[i] = functions.get_elements_for_ip(host, "manifest_dirs")
+        doc_chkrootkit[i] = functions.get_elements_for_ip(host, "chkrootkit")
+        doc_audit[i] = functions.get_elements_for_ip(host, "audit_dirs")
       
     ###################################################################
     ### Displaying menu options, highlighting when current row matches.
@@ -992,11 +996,13 @@ def display_script_menu(stdscr, title, hosts, usernames, ports):
         stdscr.addstr(box_start_y, header_x, header_text, curses.A_ITALIC | curses.color_pair(1))
         stdscr.attroff(curses.color_pair(1))
 
-
         stdscr.addstr(script_x[0], w // 2 - len(script_lines[0]) // 2, script_lines[0], curses.A_NORMAL)
         stdscr.addstr(script_x[1], w // 2 - len(script_lines[1]) // 2, script_lines[1], curses.A_NORMAL)
         stdscr.addstr(script_x[2], w // 2 - len(script_lines[2]) // 2, script_lines[2], curses.A_NORMAL)
         stdscr.addstr(script_x[3], w // 2 - len(script_lines[3]) // 2, script_lines[3], curses.A_NORMAL)
+        stdscr.addstr(script_x[4], w // 2 - len(script_lines[4]) // 2, script_lines[4], curses.A_NORMAL)
+        stdscr.addstr(script_x[5], w // 2 - len(script_lines[5]) // 2, script_lines[5], curses.A_NORMAL)
+        stdscr.addstr(script_x[6], w // 2 - len(script_lines[6]) // 2, script_lines[6], curses.A_NORMAL)
         
         if selected_row == script_x[0]:
             stdscr.addstr(script_x[0], w // 2 - len(script_lines[0]) // 2, script_lines[0], curses.A_REVERSE)
@@ -1006,9 +1012,15 @@ def display_script_menu(stdscr, title, hosts, usernames, ports):
             stdscr.addstr(script_x[2], w // 2 - len(script_lines[2]) // 2, script_lines[2], curses.A_REVERSE)
         if selected_row == script_x[3]:
             stdscr.addstr(script_x[3], w // 2 - len(script_lines[3]) // 2, script_lines[3], curses.A_REVERSE)
-        
+        if selected_row == script_x[4]:
+            stdscr.addstr(script_x[4], w // 2 - len(script_lines[4]) // 2, script_lines[4], curses.A_REVERSE)
+        if selected_row == script_x[5]:
+            stdscr.addstr(script_x[5], w // 2 - len(script_lines[5]) // 2, script_lines[5], curses.A_REVERSE)
+        if selected_row == script_x[6]:
+            stdscr.addstr(script_x[6], w // 2 - len(script_lines[6]) // 2, script_lines[6], curses.A_REVERSE)
+
         bottom_message = f"Press 'q' to go back to all hosts"
-        stdscr.addstr(h-2, 1, f"Selected hosts: {selected_row}, {hosts}, {doc_manifests}", curses.A_ITALIC | curses.A_DIM)
+        stdscr.addstr(h-2, 1, f"Selected hosts: {selected_row}, {hosts}, {doc_audit}", curses.A_ITALIC | curses.A_DIM)
         stdscr.addstr(h-3, 1, bottom_message, curses.A_ITALIC | curses.A_DIM)
         
         key = stdscr.getch()
@@ -1016,23 +1028,29 @@ def display_script_menu(stdscr, title, hosts, usernames, ports):
         if key == curses.KEY_UP:
             selected_row = max(title_y + len(title) + 4, selected_row - 1)
         elif key == curses.KEY_DOWN:
-            selected_row = min(title_y + len(title) + 7, selected_row + 1)
+            selected_row = min(title_y + len(title) + 10, selected_row + 1)
         elif key == curses.KEY_ENTER or key in [10, 13]:
             if selected_row == script_x[0]:
-                script_menu_modal(stdscr, 'PORTS', h, w, hosts, ports, usernames, doc_ports, doc_locations, doc_manifests)
+                script_menu_modal(stdscr, 'PORTS', h, w, hosts, ports, usernames, doc_ports, doc_locations, doc_manifests, doc_chkrootkit, doc_audit)
             if selected_row == script_x[1]:
-                script_menu_modal(stdscr, 'BACKUP', h, w, hosts, ports, usernames, doc_ports, doc_locations, doc_manifests)
+                script_menu_modal(stdscr, 'BACKUP', h, w, hosts, ports, usernames, doc_ports, doc_locations, doc_manifests, doc_chkrootkit, doc_audit)
             if selected_row == script_x[2]:
-                script_menu_modal(stdscr, 'LYNIS', h, w, hosts, ports, usernames, doc_ports, doc_locations, doc_manifests)
+                script_menu_modal(stdscr, 'LYNIS', h, w, hosts, ports, usernames, doc_ports, doc_locations, doc_manifests, doc_chkrootkit, doc_audit)
             if selected_row == script_x[3]:
-                script_menu_modal(stdscr, 'MANIFEST', h, w, hosts, ports, usernames, doc_ports, doc_locations, doc_manifests)
+                script_menu_modal(stdscr, 'MANIFEST', h, w, hosts, ports, usernames, doc_ports, doc_locations, doc_manifests, doc_chkrootkit, doc_audit)
+            if selected_row == script_x[4]:
+                script_menu_modal(stdscr, 'CHKROOTKIT', h, w, hosts, ports, usernames, doc_ports, doc_locations, doc_manifests, doc_chkrootkit, doc_audit)
+            if selected_row == script_x[5]:
+                script_menu_modal(stdscr, 'AUDIT_SETUP', h, w, hosts, ports, usernames, doc_ports, doc_locations, doc_manifests, doc_chkrootkit, doc_audit)
+            if selected_row == script_x[6]:
+                script_menu_modal(stdscr, 'AUDIT_RETRIEVE', h, w, hosts, ports, usernames, doc_ports, doc_locations, doc_manifests, doc_chkrootkit, doc_audit)
         elif key == ord('q'):
             break
 
         stdscr.clear()
         stdscr.refresh()
 
-def script_menu_modal(stdscr, family, height, width, hosts, ports, usernames, doc_ports, doc_locations, doc_manifests):
+def script_menu_modal(stdscr, family, height, width, hosts, ports, usernames, doc_ports, doc_locations, doc_manifests, doc_chkrootkit, doc_audit):
     
     ###################################################################
     ### script_menu_modal() - modal which will be called when some
@@ -1212,6 +1230,114 @@ def script_menu_modal(stdscr, family, height, width, hosts, ports, usernames, do
                 directory_input += chr(key)
                 modal.refresh()
 
+    if family == "CHKROOTKIT":
+        directory_input = ''
+
+        modal.addstr(1, 2, "Enter absolute paths of folders separated by spaces (ex. /home/user/testdir).")
+        modal.addstr(9, 2, 'Press ENTER to confirm')
+        modal.addstr(10, 2, 'Press q to go back')
+
+        modal.refresh()
+
+        while True:
+            curses.echo()
+            stdscr.move(modal_y + 4, modal_x + 2)
+            stdscr.clrtoeol()
+            stdscr.addstr(modal_y + 4, modal_x + 2, directory_input)
+            curses.noecho()
+            modal.addstr(10, 2, 'Press q to go back')
+
+            key = stdscr.getch()
+
+            if key == curses.KEY_ENTER or key in [10, 13]:
+                if directory_input == '':
+                    run_chkrootkit_script(hosts, ports, usernames, *doc_chkrootkit)
+                else:
+                    folders = directory_input.split()
+                    run_chkrootkit_script(hosts, ports, usernames, *folders)
+                modal.addstr(7, 2, "Chkrootkit successful", curses.A_BOLD)
+                modal.addstr(10, 2, 'Press q to go back')
+                modal.refresh()
+            elif key == ord('q'):
+                break
+            elif key == curses.KEY_BACKSPACE or key == 127:
+                directory_input = directory_input[:-1]
+            else:
+                directory_input += chr(key)
+                modal.refresh()
+
+    if family == "AUDIT_SETUP":
+        directory_input = ''
+
+        modal.addstr(1, 2, "Enter absolute paths of folders separated by spaces (ex. /home/user/testdir).")
+        modal.addstr(9, 2, 'Press ENTER to confirm')
+        modal.addstr(10, 2, 'Press q to go back')
+
+        modal.refresh()
+
+        while True:
+            curses.echo()
+            stdscr.move(modal_y + 4, modal_x + 2)
+            stdscr.clrtoeol()
+            stdscr.addstr(modal_y + 4, modal_x + 2, directory_input)
+            curses.noecho()
+            modal.addstr(10, 2, 'Press q to go back')
+
+            key = stdscr.getch()
+
+            if key == curses.KEY_ENTER or key in [10, 13]:
+                if directory_input == '':
+                    run_audit_setup_script(hosts, ports, usernames, *doc_audit)
+                else:
+                    folders = directory_input.split()
+                    run_audit_setup_script(hosts, ports, usernames, *folders)
+                modal.addstr(7, 2, "Audit successful", curses.A_BOLD)
+                modal.addstr(10, 2, 'Press q to go back')
+                modal.refresh()
+            elif key == ord('q'):
+                break
+            elif key == curses.KEY_BACKSPACE or key == 127:
+                directory_input = directory_input[:-1]
+            else:
+                directory_input += chr(key)
+                modal.refresh()
+
+    if family == "AUDIT_RETRIEVE":
+        directory_input = ''
+
+        modal.addstr(1, 2, "Enter absolute paths of folders separated by spaces (ex. /home/user/testdir).")
+        modal.addstr(9, 2, 'Press ENTER to confirm')
+        modal.addstr(10, 2, 'Press q to go back')
+
+        modal.refresh()
+
+        while True:
+            curses.echo()
+            stdscr.move(modal_y + 4, modal_x + 2)
+            stdscr.clrtoeol()
+            stdscr.addstr(modal_y + 4, modal_x + 2, directory_input)
+            curses.noecho()
+            modal.addstr(10, 2, 'Press q to go back')
+
+            key = stdscr.getch()
+
+            if key == curses.KEY_ENTER or key in [10, 13]:
+                if directory_input == '':
+                    run_audit_retrieve_script(hosts, ports, usernames, *doc_audit)
+                else:
+                    folders = directory_input.split()
+                    run_audit_retrieve_script(hosts, ports, usernames, *folders)
+                modal.addstr(7, 2, "Audit re successful", curses.A_BOLD)
+                modal.addstr(10, 2, 'Press q to go back')
+                modal.refresh()
+            elif key == ord('q'):
+                break
+            elif key == curses.KEY_BACKSPACE or key == 127:
+                directory_input = directory_input[:-1]
+            else:
+                directory_input += chr(key)
+                modal.refresh()
+
 
 script_paths = {
     "check_ports": "./modules/ports/check.sh",
@@ -1333,13 +1459,39 @@ def run_manifest_script(hosts, ports, usernames, *folders):
     print(folders)
     for i, _ in enumerate(hosts):
         #run_shell_script("hasher", hosts[i - 1], ports[i - 1], usernames[i - 1], *folders[i - 1])
-        folders_str = ' '.join(folders[i-1])
-        command = f"./modules/hasher/hasher.sh {usernames[i-1]} {hosts[i-1]} {ports[i-1]} {folders_str}"
+        folders_str = ' '.join(folders[i])
+        command = f"./modules/hasher/hasher.sh {usernames[i]} {hosts[i]} {ports[i]} {folders_str}"
         #print("i: " + hosts[i - 1] + " " + ports[i - 1] + " " + usernames[i - 1])
         print("Hshng: " + hosts[i - 1])
         execute_command(command)
     return 0
 
+def run_chkrootkit_script(hosts, ports, usernames, *folders):
+    print(folders)
+    for i, _ in enumerate(hosts):
+        folders_str = ' '.join(folders[i])
+        command = f"./modules/chkrootkit/rootkit.sh {usernames[i]} {hosts[i]} {ports[i]} {folders_str}"
+        print("rootkit host: " + hosts[i])
+        execute_command(command)
+    return 0
+
+def run_audit_setup_script(hosts, ports, usernames, *folders):
+    print(folders)
+    for i, _ in enumerate(hosts):
+        folders_str = ' '.join(folders[i])
+        command = f"./modules/audit/setup.sh {usernames[i]} {hosts[i]} {ports[i]} {folders_str}"
+        print("audit host: " + hosts[i])
+        execute_command(command)
+    return 0
+
+def run_audit_retrieve_script(hosts, ports, usernames, *folders):
+    print(folders)
+    for i, _ in enumerate(hosts):
+        folders_str = ' '.join(folders[i])
+        command = f"./modules/audit/retrieve.sh {usernames[i]} {hosts[i]} {ports[i]} {folders_str}"
+        print("audit re host: " + hosts[i])
+        execute_command(command)
+    return 0
 def get_port_info(hosts, ports, usernames, *args):
     print(args)
     for i, _ in enumerate(hosts):
