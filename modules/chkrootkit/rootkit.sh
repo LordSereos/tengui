@@ -12,8 +12,6 @@ changelog="${local_dir}changelog"
 
 mkdir -p "$local_dir"
 touch $changelog
-file="${local_dir}/file.info"
-touch "$file"
 
 ssh "$username@$remote_host" "sudo apt install gcc"
 scp chkrootkit.tar.gz $username@$remote_host:/home/$username
