@@ -2,6 +2,7 @@ import curses
 import subprocess
 import paramiko
 import functions
+import concurrent.futures
 
 def main(stdscr):
 
@@ -1214,8 +1215,13 @@ def script_menu_modal(stdscr, family, height, width, hosts, ports, usernames, do
             key = stdscr.getch()
 
             if key == curses.KEY_ENTER or key in [10, 13]:
+                usernames_test = ["tom", "tom", "mal"]
+                hosts_test = ["172.16.1.3", "172.16.2.2", "192.168.1.176"]
+                ports_test = ["22", "22", "22"]
+                folders_test = ["/home/tom/R1TWO", "/home/tom/R2ONE", "/home/mal/CRAP"]
+
                 if directory_input == '':
-                    run_manifest_script(hosts, ports, usernames, *doc_manifests)
+                    run_manifest_script(hosts_test, ports_test, usernames_test, *folders_test)
                 else:
                     folders = directory_input.split()
                     run_manifest_script(hosts, ports, usernames, *folders)
@@ -1419,12 +1425,16 @@ def run_shell_script(script_name, host, port, username, *args):
         if ssh_client:
             ssh_client.close()
 
+# def execute_command(command):
+#     try:
+#         output = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT, universal_newlines=True)
+#         return output
+#     except subprocess.CalledProcessError as e:
+#         return f"Error: {e.output}"
+
 def execute_command(command):
-    try:
-        output = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT, universal_newlines=True)
-        return output
-    except subprocess.CalledProcessError as e:
-        return f"Error: {e.output}"
+    subprocess.run(command, shell=True)
+
 
 def get_logged_in_users(host, port, username):
     command = f'ssh -o StrictHostKeyChecking=yes -p {port} {username}@{host} who'
@@ -1455,15 +1465,38 @@ def run_lynis(usernames, hosts, ports):
         execute_command(command)
     return 0
 
+
+#SINGLY COMMENTED IN THIS BLOCK IS AN APPROACH OF RUNNING MULTIPLE HOSTS ONE AFTER ANOTHER
+#DOUBLY COMMENTED IS THE PREVIOUS APPROACH OF RUNNING ONE HOST, AS PER PREVIOUS SINGULAR MENU OPTION
+# def run_manifest_script(hosts, ports, usernames, *folders):
+#     print(folders)
+#     for i, _ in enumerate(hosts):
+#         #run_shell_script("hasher", hosts[i - 1], ports[i - 1], usernames[i - 1], *folders[i - 1])
+#         folders_str = ' '.join(folders[i])
+#         #command = f"./modules/hasher/hasher.sh {usernames[i]} {hosts[i]} {ports[i]} {folders_str}"
+#         command = f"./modules/hasher/hasher.sh {usernames[i]} {hosts[i]} {ports[i]} {folders[i]}"
+#         #print("i: " + hosts[i - 1] + " " + ports[i - 1] + " " + usernames[i - 1])
+#         print("Hshng: " + hosts[i - 1])
+#         execute_command(command)
+#     return 0
+
+#RUNNING ALL HOSTS CONCURRENTLY
 def run_manifest_script(hosts, ports, usernames, *folders):
     print(folders)
+    commands = []
     for i, _ in enumerate(hosts):
-        #run_shell_script("hasher", hosts[i - 1], ports[i - 1], usernames[i - 1], *folders[i - 1])
-        folders_str = ' '.join(folders[i])
-        command = f"./modules/hasher/hasher.sh {usernames[i]} {hosts[i]} {ports[i]} {folders_str}"
-        #print("i: " + hosts[i - 1] + " " + ports[i - 1] + " " + usernames[i - 1])
-        print("Hshng: " + hosts[i - 1])
-        execute_command(command)
+        command = f"./modules/hasher/hasher.sh {usernames[i]} {hosts[i]} {ports[i]} {folders[i]}"
+        commands.append(command)
+        print("Hshng: " + hosts[i])
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = [executor.submit(execute_command, cmd) for cmd in commands]
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                future.result()
+            except Exception as e:
+                print(f"ERROR: {e}")
+
     return 0
 
 def run_chkrootkit_script(hosts, ports, usernames, *folders):
