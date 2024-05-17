@@ -1,0 +1,7 @@
+martin   pts/1        192.168.204.2    Wed Mar 20 12:19 - 12:19  (00:00)
+martin   :0           :0               Tue Feb 20 13:25    gone - no logout
+reboot   system boot  5.15.0-94-generi Tue Feb 20 13:25   still running
+martin   :0           :0               Tue Feb 20 13:21 - down   (00:03)
+reboot   system boot  5.15.0-94-generi Tue Feb 20 13:20 - 13:24  (00:04)
+
+wtmp begins Tue Feb 20 13:20:20 2024

@@ -2,13 +2,19 @@
   ports: [22, 80, 443]
   copy_locations: ["/home/martin/test", "/home/martin/test2"]
   users: [martin, martha]
-  chkrootkit: []
-  audit_dirs: []
+  manifest_dirs: [/home/martin]
+  chkrootkit: ["/home/martin"]
+  audit_dirs: ["/home/martin"]
 
 192.168.204.3:
   ports: [218, 833, 666]
   copy_locations: ["/home/martin/test3", "/home/martin/test4"]
+  manifest_dirs: [/home/martin]
   users: [martin]
+  manifest_dirs: [/home/martin]
+  chkrootkit: ["/home/martin"]
+  audit_dirs: ["/home/martin"]
+
 
 192.168.1.176:
   ports: [22, 80]
