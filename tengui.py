@@ -2,6 +2,7 @@ import curses
 import subprocess
 import paramiko
 import functions
+import concurrent.futures
 
 def main(stdscr):
 
@@ -936,8 +937,8 @@ def display_script_menu(stdscr, title, hosts, usernames, ports):
     ### by 2 so that they are not close together (for greater appeal).
     ###################################################################
     
-    script_lines = ["CHECK PORTS", "MAKE BACKUPS", "RUN LYNIS SCAN", "MANIFEST", "CHKROOTKIT", "AUDIT SETUP", "AUDIT RETRIEVAL"]
-    script_x = [title_y + len(title) + 4, title_y + len(title) + 5, title_y + len(title) + 6, title_y + len(title) + 7, title_y + len(title) + 8, title_y + len(title) + 9, title_y + len(title) + 10]
+    script_lines = ["CHECK PORTS", "MAKE BACKUPS", "RUN LYNIS SCAN", "MANIFEST", "CHECK ROOTKIT", "AUDIT SETUP", "AUDIT RETRIEVAL", "CUSTOM COMMAND"]
+    script_x = [title_y + len(title) + 4, title_y + len(title) + 5, title_y + len(title) + 6, title_y + len(title) + 7, title_y + len(title) + 8, title_y + len(title) + 9, title_y + len(title) + 10, title_y + len(title) + 11]
 
     ###################################################################
     ### Below we initialize and assign values from our documentation
@@ -1003,6 +1004,7 @@ def display_script_menu(stdscr, title, hosts, usernames, ports):
         stdscr.addstr(script_x[4], w // 2 - len(script_lines[4]) // 2, script_lines[4], curses.A_NORMAL)
         stdscr.addstr(script_x[5], w // 2 - len(script_lines[5]) // 2, script_lines[5], curses.A_NORMAL)
         stdscr.addstr(script_x[6], w // 2 - len(script_lines[6]) // 2, script_lines[6], curses.A_NORMAL)
+        stdscr.addstr(script_x[7], w // 2 - len(script_lines[7]) // 2, script_lines[7], curses.A_NORMAL)
         
         if selected_row == script_x[0]:
             stdscr.addstr(script_x[0], w // 2 - len(script_lines[0]) // 2, script_lines[0], curses.A_REVERSE)
@@ -1018,6 +1020,8 @@ def display_script_menu(stdscr, title, hosts, usernames, ports):
             stdscr.addstr(script_x[5], w // 2 - len(script_lines[5]) // 2, script_lines[5], curses.A_REVERSE)
         if selected_row == script_x[6]:
             stdscr.addstr(script_x[6], w // 2 - len(script_lines[6]) // 2, script_lines[6], curses.A_REVERSE)
+        if selected_row == script_x[7]:
+            stdscr.addstr(script_x[7], w // 2 - len(script_lines[7]) // 2, script_lines[7], curses.A_REVERSE)
 
         bottom_message = f"Press 'q' to go back to all hosts"
         stdscr.addstr(h-2, 1, f"Selected hosts: {selected_row}, {hosts}, {doc_audit}", curses.A_ITALIC | curses.A_DIM)
@@ -1028,7 +1032,7 @@ def display_script_menu(stdscr, title, hosts, usernames, ports):
         if key == curses.KEY_UP:
             selected_row = max(title_y + len(title) + 4, selected_row - 1)
         elif key == curses.KEY_DOWN:
-            selected_row = min(title_y + len(title) + 10, selected_row + 1)
+            selected_row = min(title_y + len(title) + 11, selected_row + 1)
         elif key == curses.KEY_ENTER or key in [10, 13]:
             if selected_row == script_x[0]:
                 script_menu_modal(stdscr, 'PORTS', h, w, hosts, ports, usernames, doc_ports, doc_locations, doc_manifests, doc_chkrootkit, doc_audit)
@@ -1044,6 +1048,8 @@ def display_script_menu(stdscr, title, hosts, usernames, ports):
                 script_menu_modal(stdscr, 'AUDIT_SETUP', h, w, hosts, ports, usernames, doc_ports, doc_locations, doc_manifests, doc_chkrootkit, doc_audit)
             if selected_row == script_x[6]:
                 script_menu_modal(stdscr, 'AUDIT_RETRIEVE', h, w, hosts, ports, usernames, doc_ports, doc_locations, doc_manifests, doc_chkrootkit, doc_audit)
+            if selected_row == script_x[7]:
+                script_menu_modal(stdscr, 'CUSTOM_COMMAND', h, w, hosts, ports, usernames, doc_ports, doc_locations, doc_manifests, doc_chkrootkit, doc_audit)
         elif key == ord('q'):
             break
 
@@ -1197,7 +1203,10 @@ def script_menu_modal(stdscr, family, height, width, hosts, ports, usernames, do
     if family == "MANIFEST":
         directory_input = ''
 
+        flattened_list = [item for sublist in doc_manifests for item in sublist]
+
         modal.addstr(1, 2, "Enter absolute paths of folders separated by spaces (ex. /home/user/testdir).")
+        modal.addstr(2, 2, f"{flattened_list}")
         modal.addstr(9, 2, 'Press ENTER to confirm')
         modal.addstr(10, 2, 'Press q to go back')
 
@@ -1215,7 +1224,7 @@ def script_menu_modal(stdscr, family, height, width, hosts, ports, usernames, do
 
             if key == curses.KEY_ENTER or key in [10, 13]:
                 if directory_input == '':
-                    run_manifest_script(hosts, ports, usernames, *doc_manifests)
+                    run_manifest_script(hosts, ports, usernames, *flattened_list)
                 else:
                     folders = directory_input.split()
                     run_manifest_script(hosts, ports, usernames, *folders)
@@ -1338,6 +1347,41 @@ def script_menu_modal(stdscr, family, height, width, hosts, ports, usernames, do
                 directory_input += chr(key)
                 modal.refresh()
 
+    if family == "CUSTOM_COMMAND":
+        directory_input = ''
+
+        modal.addstr(1, 2, "Write a one-liner command which will execute on the remote host(s).")
+        modal.addstr(9, 2, 'Press ENTER to confirm')
+        modal.addstr(10, 2, 'Press q to go back')
+
+        modal.refresh()
+
+        while True:
+            curses.echo()
+            stdscr.move(modal_y + 4, modal_x + 2)
+            stdscr.clrtoeol()
+            stdscr.addstr(modal_y + 4, modal_x + 2, directory_input)
+            curses.noecho()
+            modal.addstr(10, 2, 'Press q to go back')
+
+            key = stdscr.getch()
+
+            if key == curses.KEY_ENTER or key in [10, 13]:
+                if directory_input == '':
+                    run_custom_command_script(hosts, ports, usernames, *doc_audit)
+                else:
+                    run_custom_command_script(hosts, ports, usernames, directory_input)
+                modal.addstr(7, 2, "Commands ran successfully", curses.A_BOLD)
+                modal.addstr(10, 2, 'Press q to go back')
+                modal.refresh()
+            elif key == ord('q'):
+                break
+            elif key == curses.KEY_BACKSPACE or key == 127:
+                directory_input = directory_input[:-1]
+            else:
+                directory_input += chr(key)
+                modal.refresh()
+
 
 script_paths = {
     "check_ports": "./modules/ports/check.sh",
@@ -1419,12 +1463,16 @@ def run_shell_script(script_name, host, port, username, *args):
         if ssh_client:
             ssh_client.close()
 
+# def execute_command(command):
+#     try:
+#         output = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT, universal_newlines=True)
+#         return output
+#     except subprocess.CalledProcessError as e:
+#         return f"Error: {e.output}"
+
 def execute_command(command):
-    try:
-        output = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT, universal_newlines=True)
-        return output
-    except subprocess.CalledProcessError as e:
-        return f"Error: {e.output}"
+    subprocess.run(command, shell=True)
+
 
 def get_logged_in_users(host, port, username):
     command = f'ssh -o StrictHostKeyChecking=yes -p {port} {username}@{host} who'
@@ -1440,63 +1488,149 @@ def get_currently_opened_ports(host, port, username):
     #return run_shell_script("get_currently_opened_ports", host, port, username)
     
 def run_backup_script(hosts, ports, usernames, *folders):
-
+    commands = []
     for i, _ in enumerate(hosts):
         folders_str = ' '.join(folders[i-1])
-        command = f"./modules/backup/backupFiles.sh {usernames[i-1]} {hosts[i-1]} {ports[i-1]} {folders_str}"
+        command = f"./modules/backup/backupFiles.sh {usernames[i-1]} {hosts[i-1]} {ports[i-1]} {folders_str} > /dev/null 2>&1"
+        commands.append(command)
         print("i: " + hosts[i - 1])
-        execute_command(command)
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = [executor.submit(execute_command, cmd) for cmd in commands]
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                future.result()
+            except Exception as e:
+                print(f"ERROR: {e}")
+
     return 0
     
 def run_lynis(usernames, hosts, ports):
+    commands = []
     for i, _ in enumerate(hosts):
-        command = f"./modules/lynisCan/lynis.sh {usernames[i-1]} {hosts[i-1]} {ports[i-1]}"
+        command = f"./modules/lynisCan/lynis.sh {usernames[i-1]} {hosts[i-1]} {ports[i-1]} > /dev/null 2>&1 &"
+        commands.append(command)
         print("Scanning: " + hosts[i - 1])
-        execute_command(command)
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = [executor.submit(execute_command, cmd) for cmd in commands]
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                future.result()
+            except Exception as e:
+                print(f"ERROR: {e}")
+
     return 0
 
+
+#SINGLY COMMENTED IN THIS BLOCK IS AN APPROACH OF RUNNING MULTIPLE HOSTS ONE AFTER ANOTHER
+#DOUBLY COMMENTED IS THE PREVIOUS APPROACH OF RUNNING ONE HOST, AS PER PREVIOUS SINGULAR MENU OPTION
+# def run_manifest_script(hosts, ports, usernames, *folders):
+#     print(folders)
+#     for i, _ in enumerate(hosts):
+#         #run_shell_script("hasher", hosts[i - 1], ports[i - 1], usernames[i - 1], *folders[i - 1])
+#         folders_str = ' '.join(folders[i])
+#         #command = f"./modules/hasher/hasher.sh {usernames[i]} {hosts[i]} {ports[i]} {folders_str}"
+#         command = f"./modules/hasher/hasher.sh {usernames[i]} {hosts[i]} {ports[i]} {folders[i]}"
+#         #print("i: " + hosts[i - 1] + " " + ports[i - 1] + " " + usernames[i - 1])
+#         print("Hshng: " + hosts[i - 1])
+#         execute_command(command)
+#     return 0
+
+#RUNNING ALL HOSTS CONCURRENTLY
 def run_manifest_script(hosts, ports, usernames, *folders):
     print(folders)
+    commands = []
     for i, _ in enumerate(hosts):
-        #run_shell_script("hasher", hosts[i - 1], ports[i - 1], usernames[i - 1], *folders[i - 1])
-        folders_str = ' '.join(folders[i])
-        command = f"./modules/hasher/hasher.sh {usernames[i]} {hosts[i]} {ports[i]} {folders_str}"
-        #print("i: " + hosts[i - 1] + " " + ports[i - 1] + " " + usernames[i - 1])
-        print("Hshng: " + hosts[i - 1])
-        execute_command(command)
+        command = f"./modules/hasher/hasher.sh {usernames[i]} {hosts[i]} {ports[i]} {folders[i]} > /dev/null 2>&1"
+        commands.append(command)
+        print("Hshng: " + hosts[i])
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = [executor.submit(execute_command, cmd) for cmd in commands]
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                future.result()
+            except Exception as e:
+                print(f"ERROR: {e}")
+
     return 0
 
 def run_chkrootkit_script(hosts, ports, usernames, *folders):
+    commands = []
     print(folders)
     for i, _ in enumerate(hosts):
         folders_str = ' '.join(folders[i])
-        command = f"./modules/chkrootkit/rootkit.sh {usernames[i]} {hosts[i]} {ports[i]} {folders_str}"
+        command = f"./modules/chkrootkit/rootkit.sh {usernames[i]} {hosts[i]} {ports[i]} {folders_str} > /dev/null 2>&1"
+        commands.append(command)
         print("rootkit host: " + hosts[i])
-        execute_command(command)
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = [executor.submit(execute_command, cmd) for cmd in commands]
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                future.result()
+            except Exception as e:
+                print(f"ERROR: {e}")
+
     return 0
 
 def run_audit_setup_script(hosts, ports, usernames, *folders):
     print(folders)
+    commands = []
     for i, _ in enumerate(hosts):
         folders_str = ' '.join(folders[i])
-        command = f"./modules/audit/setup.sh {usernames[i]} {hosts[i]} {ports[i]} {folders_str}"
+        command = f"./modules/audit/setup.sh {usernames[i]} {hosts[i]} {ports[i]} {folders_str} > /dev/null 2>&1"
+        commands.append(command)
         print("audit host: " + hosts[i])
-        execute_command(command)
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = [executor.submit(execute_command, cmd) for cmd in commands]
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                future.result()
+            except Exception as e:
+                print(f"ERROR: {e}")
+
     return 0
 
 def run_audit_retrieve_script(hosts, ports, usernames, *folders):
     print(folders)
+    commands = []
     for i, _ in enumerate(hosts):
         folders_str = ' '.join(folders[i])
-        command = f"./modules/audit/retrieve.sh {usernames[i]} {hosts[i]} {ports[i]} {folders_str}"
+        command = f"./modules/audit/retrieve.sh {usernames[i]} {hosts[i]} {ports[i]} {folders_str} > /dev/null 2>&1"
+        commands.append(command)
         print("audit re host: " + hosts[i])
-        execute_command(command)
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = [executor.submit(execute_command, cmd) for cmd in commands]
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                future.result()
+            except Exception as e:
+                print(f"ERROR: {e}")
+
     return 0
 def get_port_info(hosts, ports, usernames, *args):
     print(args)
     for i, _ in enumerate(hosts):
         run_shell_script("check_ports", hosts[i-1], ports[i-1], usernames[i-1], *args[i-1])
         print("i: " + hosts[i-1] + " " + ports[i-1] + " " + usernames[i-1])
+    return 0
+
+def run_custom_command_script(hosts, ports, usernames, custom_commands):
+    print(" | sent command: ", custom_commands)
+    commands = []
+    for i, _ in enumerate(hosts):
+        command = f"./modules/runCmd/runCmd.sh {usernames[i]} {hosts[i]} {ports[i]} {custom_commands}"
+        commands.append(command)
+        print("cmd on: " + hosts[i])
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = [executor.submit(execute_command, cmd) for cmd in commands]
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                future.result()
+            except Exception as e:
+                print(f"ERROR: {e}")
+
     return 0
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 -ADMINISTRATORS
 192.168.204.5 22 martin
-192.168.204.6 444 testuser
+192.168.204.3 22 martin
 
 -USERS
 192.168.204.3 22 martin

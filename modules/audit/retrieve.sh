@@ -6,7 +6,7 @@ remote_host="$2"
 port="$3"
 shift 3
 audit_locations=("$@")
-local_dir="/home/tom/MEGA/treciasKursas/tengui/modules/audit/${remote_host}/"
+local_dir="/home/sereos/Desktop/tengui/modules/audit/${remote_host}/"
 timestamp=$(date +%m%d_%H%M)
 
 mkdir -p "$local_dir"
