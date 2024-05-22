@@ -45,18 +45,25 @@ python3 tengui.py
 
 ## Current functionality
 
-- VIEW INDIVIDUAL HOSTS and APPLY SCRIPTS displays all hosts from the hosts file.
-- User key input tracking and navigation in the menu.
+- Hosts can be grouped. If there are just a couple of them, add them under the first group and don't create more. Scrolling isn't yet implemented for hosts view.
 - VIEW INDIVIDUAL HOSTS menu:
   - List of hosts from the host file. Navigatable and clickable, when clicked will show info about this particular host: 
     - Logged in users
     - Currently running services
-  - All of the above mentioned processes are remotely terminatable - on ENTER click, a confirmation modal will appear to confirm service termination.
+    - Opened ports
+  - All of the above mentioned processes are remotely terminatable (except for ports) - on ENTER click, a confirmation modal will appear to confirm service termination.
+  - Context menu can be opened with 'h' for advanced navigation in the menu.
 - APPLY SCRIPTS menu:
-  - Unordered list of hosts from the host files. (TO DO: functionality to select several hosts, not only one for further actions)
+  - One, multiple or all hosts in the host group can be selected to further apply scripts to them.
   - When host(s) are selected and ENTER pressed, a window to select which scripts to apply to them opens. The scripts include:
-    - CHECK PORTS: input which ports to check, or use default settings to see whether they are closed or opened and whether they should be opened, show warnings.
-    - MAKE BACKUPS: backs up files from a remote host using SCP.
-    - RUN LYNIS SCAN: copies files to remote. After scan returns logs which can be filtered to decide on future actions.
+    - CHECK PORTS: input which ports to check, or use default settings to see whether they are closed or opened and whether they should be opened, show warnings. Output is shown in **tengui/** directrly (TO DO: change it to /tengui/modules/ports)
+    - MAKE BACKUPS: backs up files from a remote host using SCP. Backed up directories are found in **Tengui/backups**.
+    - RUN LYNIS SCAN: returns logs to **tengui/modules/lynisCan**.
+    - MANIFEST: ...
+    - CHECK ROOTKIT: ...
+    - AUDIT SETUP: ...
+    - AUDIT RETRIEVAL: ...
+    - CUSTOM COMMAND: any one-liner command can be entered to be executed on the remote host(s). If applicable, output will be shown in **/tengui/modules/runCmd**
+  - Scripts are run simultaneously on multiple hosts, and some of them (like Lynis Scan) are run on the background.
 
 
