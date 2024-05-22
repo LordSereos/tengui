@@ -24,8 +24,8 @@ There are following directories and files in this project:
 
 - Modules - folder containing necessary scripts for updating and managing hosts.
 - hosts - file which should be populated with IPv4 addresses of hosts for desired monitoring.
-
-  	- Should contain information in three columns:
+    - Write group name for the hosts below (for example WEBSERVERS)
+  	- Then write information in three columns:
   	  **{IP} {port} {username}**
   	- Example could be: **10.0.0.1 2222 root**
 
@@ -38,7 +38,8 @@ python3 tengui.py
 ### Prerequisites:
 - python3
 - ssh keys exchange between monitoring machine and other hosts
-- ...
+- user must have root privileges on the remote host
+- local_dir in modules/* scripts has to be changed to the local directory of the using machine. Now it is set to /home/sereos/Desktop/..., but all of these instances has to be changed for user which runs the TUI. (TO DO: have a separate file where we would need to change that only once, and then scripts would read the path from that file)
 
 ## User interaction flow
 ![Alt Text](utils/Flowchart.jpg)
