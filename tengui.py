@@ -451,18 +451,19 @@ def display_host_group_hosts(stdscr, group, title, isReadOnly):
             y += 1
 
         if isReadOnly:
-            bottom_message = f"Press 'q' to go back to host groups, {hosts_ips[selected_row]} {hosts_usernames[selected_row]} {hosts_ports[selected_row]}"
+            bottom_message = f"Press 'q' to go back to host groups"
             stdscr.addstr(h - 2, 1, bottom_message, curses.A_ITALIC | curses.A_DIM)
         else:
+            bottom_message = f"Press 'q' to go back to host groups"
+            stdscr.addstr(h - 4, 1, bottom_message, curses.A_ITALIC | curses.A_DIM)
+            bottom_message2 = f"Press 't' to toggle individual selection"
+            stdscr.addstr(h - 3, 1, bottom_message2, curses.A_ITALIC | curses.A_DIM)
+            bottom_message2 = f"Press 'g' to toggle all host selection. Selected hosts: {selected_hosts}"
+            stdscr.addstr(h - 2, 1, bottom_message2, curses.A_ITALIC | curses.A_DIM)
             if (selected_hosts):
                 selected_hosts_info = [(hosts_ips[i], hosts_usernames[i], hosts_ports[i]) for i in selected_hosts]
                 selected_hostnames, usernames_list, ports_list = zip(*selected_hosts_info)
-                bottom_message = f"Press 'q' to go back to host groups, {ports_list}"
-                stdscr.addstr(h - 4, 1, bottom_message, curses.A_ITALIC | curses.A_DIM)
-                bottom_message2 = f"Press 't' to toggle individual selection, current line: {selected_row}"
-                stdscr.addstr(h - 3, 1, bottom_message2, curses.A_ITALIC | curses.A_DIM)
-                bottom_message2 = f"Press 'g' to toggle all host selection, selected hosts: {selected_hosts}"
-                stdscr.addstr(h - 2, 1, bottom_message2, curses.A_ITALIC | curses.A_DIM)
+
 
         ###################################################################
         ### When host is selected (ENTER is pressed), a new window will
@@ -693,7 +694,7 @@ def display_info(stdscr, host, port, username):
         #                  f"onIt = {onIt.split()[0] + '                '} ")
         #bottom_message = (f"Press 'q' to go back to the main menu, selected row is {selected_row}, "
         #                  f"pad_pos = {pad_pos}, modalVisible = {modal_visible}            ")
-        bottom_message = (f"Press 'h' to open context menu                                , {len(ports_lines)} {host} {port} {username}")
+        bottom_message = (f"Press 'h' to open context menu                               ")
         stdscr.addstr(h - 3, 0, " " * w)
         stdscr.addstr(h - 2, 0, bottom_message, curses.A_DIM | curses.A_ITALIC)
 
@@ -1024,7 +1025,7 @@ def display_script_menu(stdscr, title, hosts, usernames, ports):
             stdscr.addstr(script_x[7], w // 2 - len(script_lines[7]) // 2, script_lines[7], curses.A_REVERSE)
 
         bottom_message = f"Press 'q' to go back to all hosts"
-        stdscr.addstr(h-2, 1, f"Selected hosts: {selected_row}, {hosts}, {doc_audit}", curses.A_ITALIC | curses.A_DIM)
+        stdscr.addstr(h-2, 1, f"Selected hosts: {hosts}", curses.A_ITALIC | curses.A_DIM)
         stdscr.addstr(h-3, 1, bottom_message, curses.A_ITALIC | curses.A_DIM)
         
         key = stdscr.getch()
@@ -1089,7 +1090,8 @@ def script_menu_modal(stdscr, family, height, width, hosts, ports, usernames, do
     ###################################################################
 
     if family == "PORTS":
-        modal.addstr(1, 2, f"Enter ports separated by spaces that should be opened on the remote host")
+        modal.addstr(1, 2, f"Enter ports separated by spaces to check if they are open on remote host.")
+        modal.addstr(2, 2, f"Press ENTER to use information from doc_file.")
         modal.addstr(9, 2, 'Press ENTER to confirm')
         modal.addstr(10, 2, 'Press q to cancel')
         modal.refresh()
@@ -1132,7 +1134,7 @@ def script_menu_modal(stdscr, family, height, width, hosts, ports, usernames, do
                 else:
                     portsss = port_input.split()
                     get_port_info(hosts, ports, usernames, *portsss)
-                modal.addstr(7, 2, f"SUCCESS", curses.A_BOLD)
+                modal.addstr(7, 2, f"Ports file created in tengui/ ", curses.A_BOLD)
                 modal.addstr(10, 2, 'Press q to go back')
                 modal.refresh()
             elif key == ord('q'):
@@ -1151,6 +1153,7 @@ def script_menu_modal(stdscr, family, height, width, hosts, ports, usernames, do
         directory_input = ''
         
         modal.addstr(1, 2, "Enter absolute paths of folders separated by spaces (ex. /home/user/testdir).")
+        modal.addstr(2, 2, f"Press ENTER to use information from doc_file.")
         modal.addstr(9, 2, 'Press ENTER to confirm')
         modal.addstr(10, 2, 'Press q to go back')
         
@@ -1184,18 +1187,18 @@ def script_menu_modal(stdscr, family, height, width, hosts, ports, usernames, do
                 modal.refresh()
                 
     if family == "LYNIS":
-        modal.addstr(1, 2, "Initiating Lynis scan.")
-        modal.addstr(9, 2, 'Press ENTER to confirm')
+        modal.addstr(1, 2, "Lynis Scan proccess will be run in the background.")
+        modal.addstr(2, 2, f"Press ENTER to confirm.")
         modal.addstr(10, 2, 'Press q to cancel')
         modal.refresh()
 
         while True:        
             key = stdscr.getch()
             if key == curses.KEY_ENTER or key in [10, 13]:
-                modal.addstr(4, 2, 'Wait for the scan to finish, it might take couple of minutes...')
+                modal.addstr(4, 2, 'Scan started, you can exit this window.')
+                modal.addstr(5, 2, 'Results will be in /tengui/modules/lynisCan')
                 modal.refresh()
                 run_lynis(usernames, hosts, ports)
-                modal.addstr(7, 2, 'SCAN FINISHED')
                 modal.refresh()
             elif key == ord('q'):
                 break
@@ -1206,7 +1209,8 @@ def script_menu_modal(stdscr, family, height, width, hosts, ports, usernames, do
         flattened_list = [item for sublist in doc_manifests for item in sublist]
 
         modal.addstr(1, 2, "Enter absolute paths of folders separated by spaces (ex. /home/user/testdir).")
-        modal.addstr(2, 2, f"{flattened_list}")
+        modal.addstr(2, 2, f"Press ENTER to use information from doc_file.")
+        modal.addstr(3, 2, 'Results will be in /tengui/modules/hasher')
         modal.addstr(9, 2, 'Press ENTER to confirm')
         modal.addstr(10, 2, 'Press q to go back')
 
@@ -1243,6 +1247,8 @@ def script_menu_modal(stdscr, family, height, width, hosts, ports, usernames, do
         directory_input = ''
 
         modal.addstr(1, 2, "Enter absolute paths of folders separated by spaces (ex. /home/user/testdir).")
+        modal.addstr(2, 2, f"Press ENTER to use information from doc_file.")
+        modal.addstr(3, 2, 'Results will be in /tengui/modules/chkrootkit')
         modal.addstr(9, 2, 'Press ENTER to confirm')
         modal.addstr(10, 2, 'Press q to go back')
 
@@ -1315,6 +1321,8 @@ def script_menu_modal(stdscr, family, height, width, hosts, ports, usernames, do
         directory_input = ''
 
         modal.addstr(1, 2, "Enter absolute paths of folders separated by spaces (ex. /home/user/testdir).")
+        modal.addstr(2, 2, f"Press ENTER to use information from doc_file.")
+        modal.addstr(3, 2, 'Results will be in /tengui/modules/audit')
         modal.addstr(9, 2, 'Press ENTER to confirm')
         modal.addstr(10, 2, 'Press q to go back')
 
@@ -1336,7 +1344,7 @@ def script_menu_modal(stdscr, family, height, width, hosts, ports, usernames, do
                 else:
                     folders = directory_input.split()
                     run_audit_retrieve_script(hosts, ports, usernames, *folders)
-                modal.addstr(7, 2, "Audit re successful", curses.A_BOLD)
+                modal.addstr(7, 2, "Audit logs formed", curses.A_BOLD)
                 modal.addstr(10, 2, 'Press q to go back')
                 modal.refresh()
             elif key == ord('q'):
@@ -1351,6 +1359,8 @@ def script_menu_modal(stdscr, family, height, width, hosts, ports, usernames, do
         directory_input = ''
 
         modal.addstr(1, 2, "Write a one-liner command which will execute on the remote host(s).")
+        modal.addstr(2, 2, f"Press ENTER to use information from doc_file.")
+        modal.addstr(3, 2, 'Results will be in /tengui/modules/runCmd')
         modal.addstr(9, 2, 'Press ENTER to confirm')
         modal.addstr(10, 2, 'Press q to go back')
 
@@ -1463,15 +1473,15 @@ def run_shell_script(script_name, host, port, username, *args):
         if ssh_client:
             ssh_client.close()
 
-# def execute_command(command):
-#     try:
-#         output = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT, universal_newlines=True)
-#         return output
-#     except subprocess.CalledProcessError as e:
-#         return f"Error: {e.output}"
-
 def execute_command(command):
-    subprocess.run(command, shell=True)
+    try:
+        output = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT, universal_newlines=True)
+        return output
+    except subprocess.CalledProcessError as e:
+        return f"Error: {e.output}"
+
+# def execute_command(command):
+#     subprocess.run(command, shell=True)
 
 
 def get_logged_in_users(host, port, username):
@@ -1493,7 +1503,6 @@ def run_backup_script(hosts, ports, usernames, *folders):
         folders_str = ' '.join(folders[i-1])
         command = f"./modules/backup/backupFiles.sh {usernames[i-1]} {hosts[i-1]} {ports[i-1]} {folders_str} > /dev/null 2>&1"
         commands.append(command)
-        print("i: " + hosts[i - 1])
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = [executor.submit(execute_command, cmd) for cmd in commands]
@@ -1510,7 +1519,6 @@ def run_lynis(usernames, hosts, ports):
     for i, _ in enumerate(hosts):
         command = f"./modules/lynisCan/lynis.sh {usernames[i-1]} {hosts[i-1]} {ports[i-1]} > /dev/null 2>&1 &"
         commands.append(command)
-        print("Scanning: " + hosts[i - 1])
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = [executor.submit(execute_command, cmd) for cmd in commands]
         for future in concurrent.futures.as_completed(futures):
@@ -1538,12 +1546,10 @@ def run_lynis(usernames, hosts, ports):
 
 #RUNNING ALL HOSTS CONCURRENTLY
 def run_manifest_script(hosts, ports, usernames, *folders):
-    print(folders)
     commands = []
     for i, _ in enumerate(hosts):
         command = f"./modules/hasher/hasher.sh {usernames[i]} {hosts[i]} {ports[i]} {folders[i]} > /dev/null 2>&1"
         commands.append(command)
-        print("Hshng: " + hosts[i])
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = [executor.submit(execute_command, cmd) for cmd in commands]
@@ -1557,12 +1563,10 @@ def run_manifest_script(hosts, ports, usernames, *folders):
 
 def run_chkrootkit_script(hosts, ports, usernames, *folders):
     commands = []
-    print(folders)
     for i, _ in enumerate(hosts):
         folders_str = ' '.join(folders[i])
         command = f"./modules/chkrootkit/rootkit.sh {usernames[i]} {hosts[i]} {ports[i]} {folders_str} > /dev/null 2>&1"
         commands.append(command)
-        print("rootkit host: " + hosts[i])
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = [executor.submit(execute_command, cmd) for cmd in commands]
         for future in concurrent.futures.as_completed(futures):
@@ -1574,13 +1578,11 @@ def run_chkrootkit_script(hosts, ports, usernames, *folders):
     return 0
 
 def run_audit_setup_script(hosts, ports, usernames, *folders):
-    print(folders)
     commands = []
     for i, _ in enumerate(hosts):
         folders_str = ' '.join(folders[i])
         command = f"./modules/audit/setup.sh {usernames[i]} {hosts[i]} {ports[i]} {folders_str} > /dev/null 2>&1"
         commands.append(command)
-        print("audit host: " + hosts[i])
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = [executor.submit(execute_command, cmd) for cmd in commands]
         for future in concurrent.futures.as_completed(futures):
@@ -1592,13 +1594,11 @@ def run_audit_setup_script(hosts, ports, usernames, *folders):
     return 0
 
 def run_audit_retrieve_script(hosts, ports, usernames, *folders):
-    print(folders)
     commands = []
     for i, _ in enumerate(hosts):
         folders_str = ' '.join(folders[i])
         command = f"./modules/audit/retrieve.sh {usernames[i]} {hosts[i]} {ports[i]} {folders_str} > /dev/null 2>&1"
         commands.append(command)
-        print("audit re host: " + hosts[i])
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = [executor.submit(execute_command, cmd) for cmd in commands]
         for future in concurrent.futures.as_completed(futures):
@@ -1612,16 +1612,13 @@ def get_port_info(hosts, ports, usernames, *args):
     print(args)
     for i, _ in enumerate(hosts):
         run_shell_script("check_ports", hosts[i-1], ports[i-1], usernames[i-1], *args[i-1])
-        print("i: " + hosts[i-1] + " " + ports[i-1] + " " + usernames[i-1])
     return 0
 
 def run_custom_command_script(hosts, ports, usernames, custom_commands):
-    print(" | sent command: ", custom_commands)
     commands = []
     for i, _ in enumerate(hosts):
         command = f"./modules/runCmd/runCmd.sh {usernames[i]} {hosts[i]} {ports[i]} {custom_commands}"
         commands.append(command)
-        print("cmd on: " + hosts[i])
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = [executor.submit(execute_command, cmd) for cmd in commands]
