@@ -40,6 +40,7 @@ python3 tengui.py
 - ssh keys exchange between monitoring machine and other hosts
 - user must have root privileges on the remote host
 - local_dir in modules/* scripts has to be changed to the local directory of the using machine. Now it is set to /home/sereos/Desktop/..., but all of these instances has to be changed for user which runs the TUI. (TO DO: have a separate file where we would need to change that only once, and then scripts would read the path from that file)
+- terminal height should be not smaller than 22 lines. Some of the parts are not scrollable, WIP.
 
 ## User interaction flow
 ![Alt Text](utils/Flowchart.jpg)
