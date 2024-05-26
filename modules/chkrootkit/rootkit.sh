@@ -14,7 +14,7 @@ mkdir -p "$local_dir"
 touch $changelog
 
 ssh "$username@$remote_host" "sudo apt install -y gcc"
-scp chkrootkit.tar.gz $username@$remote_host:/home/$username
+scp "/home/sereos/Desktop/tengui/modules/chkrootkit/chkrootkit.tar.gz" $username@$remote_host:/home/$username
 ssh_command="cd /home/$username && tar xvf chkrootkit.tar.gz && cd chkrootkit-0.58b && sudo make sense && sudo ./chkrootkit"
 ssh "$username@$remote_host" "$ssh_command" >> "$local_dest"
 

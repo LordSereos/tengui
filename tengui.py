@@ -1622,6 +1622,7 @@ def get_port_info(hosts, ports, usernames, *args):
 
 def run_custom_command_script(hosts, ports, usernames, custom_commands):
     commands = []
+    print(f" sent {custom_commands} ")
     for i, _ in enumerate(hosts):
         command = f"./modules/runCmd/runCmd.sh {usernames[i]} {hosts[i]} {ports[i]} {custom_commands}"
         commands.append(command)

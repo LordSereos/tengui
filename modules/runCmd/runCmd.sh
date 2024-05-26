@@ -4,18 +4,20 @@ username="$1"
 remote_host="$2"
 port="$3"
 shift 3
-command=("$@")
+
+# Store the entire command as a single string
+command="$*"
+
 local_dir="/home/sereos/Desktop/tengui/modules/runCmd/${remote_host}/"
 timestamp=$(date +%m%d_%H%M)
 
-#CREATE ONE OUTPUT FILE ONLY
-#local_dest="${local_dir}$runCmd.log"
-#CREATE NEW FILE FOR EVERY OUTPUT
-local_dest="${local_dir}$runCmd-${timestamp}.log"
+local_dest="${local_dir}runCmd-${timestamp}.log"
 
 mkdir -p "$local_dir"
 
-#APPEND TO ONE LOG PER HOST
-#ssh "$username@$remote_host" "$command" >> "$local_dest"
-#CREATE NEW TIMESTAMPED LOG
-ssh "$username@$remote_host" "${command[@]}" > "$local_dest"
+# Echo the command into the log file
+echo "$command" > "$local_dest"
+
+# Execute the command on the remote host using eval
+ssh "$username@$remote_host" "eval \"$command\"" >> "$local_dest"
+
