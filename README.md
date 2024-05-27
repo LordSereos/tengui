@@ -65,7 +65,7 @@ python3 tengui.py
   NOTES:
 There have to be two hash files present locally for differ to work on.
 Filenames include timestamp therefore files created within the same minute window overwrite.
-    - CHECK ROOTKIT: runs rootkit/backdoor checks remotely. Saves output in **tengui/modules/chkrootkit**.
+    - CHECK ROOTKIT: runs rootkit/backdoor checks remotely. Saves output in **tengui/modules/chkrootkit**. Give few minutes for all scripts to execute and log to appear.
     - AUDIT SETUP: prepares remote host agents for audit retrieval script.
     - AUDIT RETRIEVAL: retrieves last, lastb, lastlog, ac, lastcomm logs from remote machine, stores locally in **tengui/modules/audit** for inspection and forensics.
     - CUSTOM COMMAND: any one-liner command can be entered to be executed on the remote host(s). If applicable, output will be shown in **/tengui/modules/runCmd**
