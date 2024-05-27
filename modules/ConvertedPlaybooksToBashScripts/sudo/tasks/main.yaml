@@ -1,0 +1,28 @@
+---
+- name: "Recursively change ownership of sudoers.d dir"
+  file:
+    path: "/etc/sudoers.d"
+    state: directory
+    recurse: yes
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: "Create blueteam sudoers file"
+  file:
+    path: "/etc/sudoers.d/blueteam"
+    state: touch
+    mode: '0440'
+
+- name: "Add blueteam to sudoers"
+  lineinfile:
+    path: "/etc/sudoers.d/blueteam"
+    line: '%blueteam    ALL=(ALL:ALL) ALL'
+    create: no
+
+- name: "Remove unnecessary users/group from sudoers"
+  replace:
+    path: "/etc/sudoers"
+    regexp: '^(?!(root)).*ALL$'
+    replace: ''
+    backup: no
