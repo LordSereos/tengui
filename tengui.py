@@ -1554,6 +1554,7 @@ def run_lynis(usernames, hosts, ports):
 def run_manifest_script(hosts, ports, usernames, *folders):
     commands = []
     for i, _ in enumerate(hosts):
+        folders_str = ' '.join(folders[i])
         command = f"./modules/hasher/hasher.sh {usernames[i]} {hosts[i]} {ports[i]} {folders[i]} > /dev/null 2>&1"
         commands.append(command)
 
@@ -1570,8 +1571,8 @@ def run_manifest_script(hosts, ports, usernames, *folders):
 def run_chkrootkit_script(hosts, ports, usernames, *folders):
     commands = []
     for i, _ in enumerate(hosts):
-        folders_str = ' '.join(folders[i])
-        command = f"./modules/chkrootkit/rootkit.sh {usernames[i]} {hosts[i]} {ports[i]} {folders_str} > /dev/null 2>&1"
+        # folders_str = ' '.join(folders[i])
+        command = f"./modules/chkrootkit/rootkit.sh {usernames[i]} {hosts[i]} {ports[i]} > /dev/null 2>&1"
         commands.append(command)
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = [executor.submit(execute_command, cmd) for cmd in commands]
