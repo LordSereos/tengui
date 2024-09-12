@@ -1,0 +1,20 @@
+
+*** /home/sereos/Desktop/tengui/modules/hasher/192.168.204.5/_home_martin-0527_1613.hashes	2024-05-27 16:13:08.139326221 +0300
+--- /home/sereos/Desktop/tengui/modules/hasher/192.168.204.5/_home_martin-0527_1614.hashes	2024-05-27 16:14:03.972657269 +0300
+***************
+*** 32,38 ****
+  /home/martin/.local/share/gvfs-metadata/root - d3eab1ef7cbc51bbbf325bf5902653c7
+  /home/martin/.local/share/tracker/data/tracker-store.journal - 0df8295b037a97223efa9dc9324d5306
+  /home/martin/.local/share/tracker/data/tracker-store.ontology.journal - 5a69c1ab1c563698a2922019c23a450f
+! /home/martin/newfile2 - d41d8cd98f00b204e9800998ecf8427e
+  /home/martin/klimb.txt - d41d8cd98f00b204e9800998ecf8427e
+  /home/martin/Downloads/hi - d41d8cd98f00b204e9800998ecf8427e
+  /home/martin/.ssh/id_rsa - e62b3dadd14ee561e7e6fe0f08a9d37d
+--- 32,38 ----
+  /home/martin/.local/share/gvfs-metadata/root - d3eab1ef7cbc51bbbf325bf5902653c7
+  /home/martin/.local/share/tracker/data/tracker-store.journal - 0df8295b037a97223efa9dc9324d5306
+  /home/martin/.local/share/tracker/data/tracker-store.ontology.journal - 5a69c1ab1c563698a2922019c23a450f
+! /home/martin/newfile2 - 7494ab07987ba112bd5c4f9857ccfb3f
+  /home/martin/klimb.txt - d41d8cd98f00b204e9800998ecf8427e
+  /home/martin/Downloads/hi - d41d8cd98f00b204e9800998ecf8427e
+  /home/martin/.ssh/id_rsa - e62b3dadd14ee561e7e6fe0f08a9d37d

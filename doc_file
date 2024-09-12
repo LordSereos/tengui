@@ -2,7 +2,7 @@
   ports: [22, 80, 443]
   copy_locations: ["/home/martin/test", "/home/martin/test2"]
   users: [martin, martha]
-  manifest_dirs: [/home/martin/test]
+  manifest_dirs: [/home/martin]
   chkrootkit: ["/home/martin"]
   audit_dirs: ["/home/martin", "/etc"]
 
