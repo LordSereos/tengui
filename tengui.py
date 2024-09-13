@@ -30,16 +30,22 @@ def display_menu(stdscr, title):
     h, w, title_x, title_y, selected_row = functions.set_window_param(stdscr, title)
 
     groups = {}
-    host_counts = {}
     current_group = None
+    host_counts = []  # Initialize an empty list to store counts
+    current_count = 0
+
 
     with open('hosts', 'r') as file:
         for line in file:
             line = line.strip()  # Remove any leading/trailing whitespace
             if line.startswith('-'):  # Check for group name
+                if current_count > 0:
+                    # Save the count for the previous group
+                    host_counts.append(current_count)
+                    # Reset current_count for the new group
+                current_count = 0
                 current_group = line[1:]  # Get the group name without the leading '-'
-                host_counts[current_group] = 0
-                groups[current_group] = []  # Initialize an empty list for the group
+                groups[current_group] = []  # Initialize an empty list for the new group
             else:
                 parts = line.split()
                 if len(parts) >= 3 and current_group:  # Ensure it's a valid host line and there's a group
@@ -47,16 +53,21 @@ def display_menu(stdscr, title):
                     port = parts[1]
                     username = parts[2]
                     groups[current_group].append((ip_address, port, username))
-                    host_counts[current_group] += 1
+                    current_count += 1
+
+        # Don't forget to add the count for the last group after finishing the file
+        if current_group is not None:
+            host_counts.append(len(groups[current_group]))
 
     all_hosts = [(group, host[0]) for group, hosts in groups.items() for host in hosts]
     total_hosts = len(all_hosts)
+    unintented_lines = 8 + 9
 
     selected_row = 0  # Index of the selected host in the current group
     pad_pos = 0  # Current scroll position in the pad (in rows)
-    current_group = list(groups.keys())[0]  # Start with the first group
-    group_start_index = 0
-    group_end_index = host_counts[current_group]  # End index of the current group
+    # current_group = list(groups.keys())[0]  # Start with the first group
+    # group_start_index = 0
+    # group_end_index = host_counts[current_group]  # End index of the current group
 
     pad_height = max(h * 2, total_hosts + 3)  # Ensure pad is at least as tall as needed
     pad_width = w
@@ -75,18 +86,18 @@ def display_menu(stdscr, title):
         content_start_y = title_y + 3
         current_host_index = 0
 
+        i = 0
         for group_name, hosts in groups.items():
             menu_options = [host[0] for host in hosts]  # Extract IP addresses
             host_count = len(menu_options)  # Number of hosts in this group
 
             boxes.display_menu_box4(
                 pad, content_start_y, w, menu_options, f"{group_name}",
-                curses, selected_row if current_host_index <= selected_row < current_host_index + host_count else -1
-
-            )
+                curses, selected_row, host_counts[i])
 
             content_start_y += host_count + 3 + 2  # Move start_y for the next group
             current_host_index += host_count  # Update index for the next group# Move start_y for next group
+            i += 1
 
         pad.refresh(pad_pos, 0, 0, 0, h - 1, w - 1)
 
@@ -96,62 +107,28 @@ def display_menu(stdscr, title):
         stdscr.addstr(h - 1, 1, footer_message2, curses.A_DIM | curses.A_ITALIC)
         footer_message3 = f"h: {h}"
         stdscr.addstr(h - 3, 1, footer_message3, curses.A_DIM | curses.A_ITALIC)
-        #footer_message4 = f"condition: {pad_pos + h - unintented_lines}"
-        #sstdscr.addstr(h - 4, 1, footer_message4, curses.A_DIM | curses.A_ITALIC)
+        footer_message4 = f"condition: {pad_pos + h - unintented_lines}"
+        stdscr.addstr(h - 4, 1, footer_message4, curses.A_DIM | curses.A_ITALIC)
         footer_message5 = f"hosts: {total_hosts}"
         stdscr.addstr(h - 5, 1, footer_message5, curses.A_DIM | curses.A_ITALIC)
+        footer_message6 = f"host counts: {host_counts}"
+        stdscr.addstr(h - 6, 1, footer_message6, curses.A_DIM | curses.A_ITALIC)
+
 
         key = stdscr.getch()
 
-        # if key == curses.KEY_UP:
-        #     selected_row = max(0, selected_row - 1)
-        #     if selected_row < pad_pos:
-        #         pad_pos = min(0, selected_row - 1)
-        # elif key == curses.KEY_DOWN:
-        #     selected_row = min(total_hosts, selected_row + 1)
-        #     if selected_row >= pad_pos + h - unintented_lines:
-        #         pad_pos = min(selected_row - h + unintented_lines, total_hosts + unintented_lines - h)
-        # elif key == ord('q'):
-        #     break
-
-        # if key == curses.KEY_DOWN or key == curses.KEY_UP:
-        #     # Update selected_row based on key press
-        #     selected_row = boxes.update_selected_row(selected_row, key, group_start_index, group_end_index, curses)
-        #
-        #     if selected_row < 0:
-        #         # Move to the previous group
-        #         group_names = list(groups.keys())
-        #         current_group_index = group_names.index(current_group)
-        #         if current_group_index > 0:
-        #             current_group = group_names[current_group_index - 1]
-        #         selected_row = host_counts[current_group] - 1
-        #         group_start_index = sum(host_counts[g] for g in group_names[:current_group_index])
-        #         group_end_index = group_start_index + host_counts[current_group]
-        #     elif selected_row >= group_end_index - group_start_index:
-        #         # Move to the next group
-        #         group_names = list(groups.keys())
-        #         current_group_index = group_names.index(current_group)
-        #         if current_group_index < len(group_names) - 1:
-        #             current_group = group_names[current_group_index + 1]
-        #         selected_row = 0
-        #         group_start_index = sum(host_counts[g] for g in group_names[:current_group_index])
-        #         group_end_index = group_start_index + host_counts[current_group]
-        #
-        #     pad_pos = max(0, min(pad_pos, total_hosts - h))
-
-        if key == curses.KEY_DOWN:
-            if selected_row < total_hosts - 1:
-                selected_row += 1
-                if selected_row >= pad_pos + h:
-                    pad_pos = min(selected_row - h + 1, total_hosts - h)
-        elif key == curses.KEY_UP:
-            if selected_row > 0:
-                selected_row -= 1
-                if selected_row < pad_pos:
-                    pad_pos = max(selected_row, 0)
-
+        if key == curses.KEY_UP:
+            selected_row = max(0, selected_row - 1)
+            if selected_row < pad_pos:
+                pad_pos = min(0, selected_row - 1)
+        elif key == curses.KEY_DOWN:
+            selected_row = min(total_hosts, selected_row + 1)
+            if selected_row >= pad_pos + h - unintented_lines:
+                pad_pos = min(selected_row - h + unintented_lines, total_hosts + unintented_lines - h)
         elif key == ord('q'):
-            break  # Exit the loop if 'q' is pressed
+            break
+
+
 
 
 

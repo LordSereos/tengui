@@ -107,7 +107,7 @@ def display_menu_box3(pad, title, start_y, w, menu_options, header, curses, sele
             pad.addstr(y, x, option)
 
 
-def display_menu_box4(pad, start_y, w, menu_options, header, curses, selected_row):
+def display_menu_box4(pad, start_y, w, menu_options, header, curses, selected_row, host_counts):
     box_start_x = (w - (2 * w // 3)) // 2  # Centered horizontally
     box_end_x = 2 * w // 3
 
