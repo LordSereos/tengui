@@ -2,20 +2,40 @@ import functions
 
 
 def display_menu_box(title, title_y, w, menu_options, header, stdscr, curses, selected_row, type, isReadOnly=False, selected_hosts=None):
-    ###################################################################
-    ### Adding border to the main menu options for better visual
-    ### effect. We need to draw 2 horizontal and 2 vertical lines
-    ### (vline and hline) around the area where options will be
-    ### displayed. .addch are corners for the box.
-    ###
-    ### box_start_y - top-left box corner on the y-axis.
-    ### box_end_y   - bottom-left box corner on the y-axis.
-    ### box_start_x - top-left box corner on the x-axis.
-    ### box_end_x   - right box corners on the x-axis.
-    ###
-    ### .attron()   - enables color theme for all text and lines.
-    ### .attroff()  - disables color theme from this line on.
-    ###################################################################
+
+    box_start_y = title_y + len(title) + 2
+    box_end_y = box_start_y + len(menu_options) + 3
+    box_start_x = (w - (2 * w // 3)) // 2  # (Centered horizontally)
+    box_end_x = 2 * w // 3
+
+    stdscr.attron(curses.color_pair(1))
+    stdscr.hline(box_start_y, box_start_x, curses.ACS_HLINE, box_end_x)
+    stdscr.hline(box_end_y, box_start_x, curses.ACS_HLINE, box_end_x)
+    stdscr.vline(box_start_y + 1, box_start_x, curses.ACS_VLINE, box_end_y - box_start_y - 1)
+    stdscr.vline(box_start_y + 1, box_start_x + box_end_x - 1, curses.ACS_VLINE, box_end_y - box_start_y - 1)
+
+    stdscr.addch(box_start_y, box_start_x, curses.ACS_ULCORNER)
+    stdscr.addch(box_start_y, box_start_x + box_end_x - 1, curses.ACS_URCORNER)
+    stdscr.addch(box_end_y, box_start_x, curses.ACS_LLCORNER)
+    stdscr.addch(box_end_y, box_start_x + box_end_x - 1, curses.ACS_LRCORNER)
+
+    header_text = header
+    header_x = box_start_x + 2
+    stdscr.addstr(box_start_y, header_x, header_text, curses.A_ITALIC | curses.color_pair(1))
+    stdscr.attroff(curses.color_pair(1))
+
+    # Display each menu option
+    for i, option in enumerate(menu_options):
+        x = box_start_x + ((2 * w // 3) - len(option)) // 2  # (Centered horizontally)
+        y = box_start_y + i + 2
+
+        if i == selected_row:
+            stdscr.addstr(y, x, option, curses.A_REVERSE)
+        else:
+            stdscr.addstr(y, x, option)
+
+
+def display_menu_box2(title, title_y, w, menu_options, header, stdscr, curses, selected_row, type, isReadOnly=False, selected_hosts=None):
 
     box_start_y = title_y + len(title) + 2
     box_end_y = box_start_y + len(menu_options) + 3
@@ -53,6 +73,85 @@ def display_menu_box(title, title_y, w, menu_options, header, stdscr, curses, se
         host_group_options(menu_options, box_start_x, box_start_y, w, selected_row, stdscr, curses, isReadOnly, selected_hosts)
     if type == 4:
         script_menu_options(menu_options, title_y, title, w, selected_row, stdscr, curses)
+
+
+def display_menu_box3(pad, title, start_y, w, menu_options, header, curses, selected_row):
+    box_start_x = (w - (2 * w // 3)) // 2  # Centered horizontally
+    box_end_x = 2 * w // 3
+
+    # Draw box
+    pad.attron(curses.color_pair(1))
+    pad.hline(start_y, box_start_x, curses.ACS_HLINE, box_end_x)
+    pad.hline(start_y + len(menu_options) + 3, box_start_x, curses.ACS_HLINE, box_end_x)
+    pad.vline(start_y + 1, box_start_x, curses.ACS_VLINE, len(menu_options) + 2)
+    pad.vline(start_y + 1, box_start_x + box_end_x - 1, curses.ACS_VLINE, len(menu_options) + 2)
+
+    pad.addch(start_y, box_start_x, curses.ACS_ULCORNER)
+    pad.addch(start_y, box_start_x + box_end_x - 1, curses.ACS_URCORNER)
+    pad.addch(start_y + len(menu_options) + 3, box_start_x, curses.ACS_LLCORNER)
+    pad.addch(start_y + len(menu_options) + 3, box_start_x + box_end_x - 1, curses.ACS_LRCORNER)
+
+    # Display header
+    header_x = box_start_x + 2
+    pad.addstr(start_y, header_x, header, curses.A_ITALIC | curses.color_pair(1))
+    pad.attroff(curses.color_pair(1))
+
+    # Display each menu option
+    for i, option in enumerate(menu_options):
+        x = box_start_x + ((2 * w // 3) - len(option)) // 2  # Centered horizontally
+        y = start_y + i + 2
+
+        if i == selected_row:
+            pad.addstr(y, x, option, curses.A_REVERSE)
+        else:
+            pad.addstr(y, x, option)
+
+
+def display_menu_box4(pad, start_y, w, menu_options, header, curses, selected_row):
+    box_start_x = (w - (2 * w // 3)) // 2  # Centered horizontally
+    box_end_x = 2 * w // 3
+
+    # Draw box
+    pad.attron(curses.color_pair(1))
+    pad.hline(start_y, box_start_x, curses.ACS_HLINE, box_end_x)
+    pad.hline(start_y + len(menu_options) + 3, box_start_x, curses.ACS_HLINE, box_end_x)
+    pad.vline(start_y + 1, box_start_x, curses.ACS_VLINE, len(menu_options) + 2)
+    pad.vline(start_y + 1, box_start_x + box_end_x - 1, curses.ACS_VLINE, len(menu_options) + 2)
+
+    pad.addch(start_y, box_start_x, curses.ACS_ULCORNER)
+    pad.addch(start_y + len(menu_options) + 3, box_start_x, curses.ACS_LLCORNER)
+    pad.addch(start_y, box_start_x + box_end_x - 1, curses.ACS_URCORNER)
+    pad.addch(start_y + len(menu_options) + 3, box_start_x + box_end_x - 1, curses.ACS_LRCORNER)
+
+    # Display header
+    header_x = box_start_x + 2
+    pad.addstr(start_y, header_x, header, curses.A_ITALIC | curses.color_pair(1))
+    pad.attroff(curses.color_pair(1))
+
+    # Display each menu option
+    for i, option in enumerate(menu_options):
+        x = box_start_x + ((2 * w // 3) - len(option)) // 2  # Centered horizontally
+        y = start_y + i + 2
+
+        if i == selected_row:
+            pad.addstr(y, x, option, curses.A_REVERSE)
+        else:
+            pad.addstr(y, x, option)
+
+
+def update_selected_row(selected_row, key, group_start_index, group_end_index, curses):
+    if key == curses.KEY_DOWN:
+        if selected_row < group_end_index - group_start_index:
+            selected_row += 1
+        else:
+            selected_row = 0  # Move to the first element of the next group
+    elif key == curses.KEY_UP:
+        if selected_row > 0:
+            selected_row -= 1
+        else:
+            selected_row = group_end_index - group_start_index - 1  # Move to the last element of the previous group
+
+    return selected_row
 
 
 def main_menu_options(menu_options, box_start_x, box_start_y, w, selected_row, stdscr, curses):
