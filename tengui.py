@@ -4,7 +4,8 @@ import paramiko
 import functions
 import boxes
 import concurrent.futures
-
+import threading
+import logging
 
 def main(stdscr):
 
@@ -65,7 +66,10 @@ def display_menu(stdscr):
     host_ips = []
     for hosts in groups.values():
         host_ips.extend([host[0] for host in hosts])
-    functions.repeated_ping(host_ips)
+    # functions.repeated_ping(host_ips)
+    ping_thread = threading.Thread(target=functions.repeated_ping, args=(host_ips, 10))
+    ping_thread.daemon = True  # Set as daemon so it exits when the main program exits
+    ping_thread.start()
 
     selected_row = 0  # Index of the selected host in the current group
     pad_pos = 0  # Current scroll position in the pad (in rows)
@@ -81,6 +85,9 @@ def display_menu(stdscr):
 
     curses.init_pair(2, curses.COLOR_GREEN, curses.COLOR_BLACK)  # Green for alive
     curses.init_pair(3, curses.COLOR_RED, curses.COLOR_BLACK)
+    curses.init_pair(4, curses.COLOR_BLUE, curses.COLOR_BLACK)
+
+    selected_hosts = set()
 
     while True:
 
@@ -100,7 +107,7 @@ def display_menu(stdscr):
 
             boxes.display_menu_box4(
                 pad, content_start_y, w, menu_options, f"{group_name}",
-                curses, selected_row, host_counts, k, i)
+                curses, selected_row, host_counts, k, i, selected_hosts)
 
             content_start_y += host_count + 3 + 2  # Move start_y for the next group
             current_host_index += host_count  # Update index for the next group# Move start_y for next group
@@ -118,7 +125,7 @@ def display_menu(stdscr):
         stdscr.addstr(h - 3, 1, footer_message3, curses.A_DIM | curses.A_ITALIC)
         footer_message5 = f"hosts: {total_hosts}"
         stdscr.addstr(h - 5, 1, footer_message5, curses.A_DIM | curses.A_ITALIC)
-        footer_message6 = f"host counts: {host_counts}"
+        footer_message6 = f"selected: {selected_hosts}"
         stdscr.addstr(h - 6, 1, footer_message6, curses.A_DIM | curses.A_ITALIC)
         footer_message7 = f"unintended_lines: {unintended_lines}"
         stdscr.addstr(h - 7, 1, footer_message7, curses.A_DIM | curses.A_ITALIC)
@@ -137,9 +144,29 @@ def display_menu(stdscr):
             if selected_row >= intended_lines:
                 pad_pos = min(selected_row, total_hosts - len(host_counts)*4)
         elif key == curses.KEY_ENTER or key in [10, 13]:
-            host, port, username = flattened_hosts[selected_row]
-            display_info(stdscr, host, port, username)
+            if selected_hosts:
+                for index in selected_hosts:
+                    if 0 <= index < len(flattened_hosts):  # Ensure index is valid
+                        host, port, username = flattened_hosts[index]
+                        logging.debug(f"Selected Host - IP: {host}, Port: {port}, Username: {username}")
+                    else:
+                        logging.warning(f"Index {index} is out of range in flattened_hosts.")
+            else:
+                host, port, username = flattened_hosts[selected_row]
+                display_info(stdscr, host, port, username)
+        elif key == ord('g') or key == ord('G'):
+            if len(selected_hosts) == len(host_ips):
+                selected_hosts.clear()
+            else:
+                selected_hosts = set(range(len(host_ips)))
+        elif key == ord('t') or key == ord('T'):
+            if selected_row in selected_hosts:
+                selected_hosts.remove(selected_row)
+            else:
+                selected_hosts.add(selected_row)
         elif key == ord('q'):
+            global stop_threads
+            stop_threads = True
             break
 
 
@@ -308,8 +335,7 @@ def display_info(stdscr, host, port, username):
         # pad_unintented_lines = h - shown_info
 
         key = stdscr.getch()
-        if key == ord('q'):
-            break
+
         if key == curses.KEY_UP:
             selected_row = max(1, selected_row - 1)
             if selected_row < pad_pos:
@@ -318,14 +344,14 @@ def display_info(stdscr, host, port, username):
             selected_row = min((len(users_lines) + len(services_lines) + len(ports_lines)), selected_row + 1)
             if selected_row >= pad_pos + h - unintented_lines:
                 pad_pos = min(selected_row - h + unintented_lines, total_height - h)
-        if key == ord(' '):
+        elif key == ord(' '):
             selected_row = min((len(users_lines) + len(services_lines) + len(ports_lines)), pad_pos + h - 3)
             pad_pos = min(total_height - h, h)
-        if key == ord('y') or key == ord('Y'):
+        elif key == ord('y') or key == ord('Y'):
             selected_row = max(1, selected_row - h)
             if selected_row <= pad_pos:
                 pad_pos = max(0, selected_row - 1)
-        if key == ord('g') or key == ord('G'):
+        elif key == ord('g') or key == ord('G'):
             # Jump to the next family list
             if family == "USERS":
                 selected_row = min((len(users_lines) + len(services_lines) + len(ports_lines)), len(users_lines) + 1)
@@ -334,7 +360,7 @@ def display_info(stdscr, host, port, username):
                                    len(users_lines) + len(services_lines) + 1)
             if selected_row >= pad_pos + h - 6:
                 pad_pos = min(selected_row - h + 8, selected_row + 3)
-        if key == ord('b') or key == ord('B'):
+        elif key == ord('b') or key == ord('B'):
             # Jump to the previous family list
             if family == "SERVICES":
                 selected_row = 1
@@ -342,10 +368,14 @@ def display_info(stdscr, host, port, username):
                 selected_row = len(users_lines) + 1
             if selected_row <= pad_pos:
                 pad_pos = max(0, selected_row - 1)
-        if key == ord('h'):
+        elif key == ord('h'):
             modal_visible = not modal_visible
-        if key == curses.KEY_ENTER or key == 10:
+        elif key == ord('u'):
+            TODO: Open execute command modal fromm boxes.script_menu_modal
+        elif key == curses.KEY_ENTER or key == 10:
             boxes.display_confirmation_modal(onIt, family, h, w, host, port, username, stdscr, curses)
+        elif key == ord('q'):
+            break
 
 
 def find_selected_element_in_host_info(selected_row, users_lines, services_lines, ports_lines):

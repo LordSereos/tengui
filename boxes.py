@@ -1,113 +1,6 @@
 import functions
 
-
-def display_menu_box(title, title_y, w, menu_options, header, stdscr, curses, selected_row, type, isReadOnly=False, selected_hosts=None):
-
-    box_start_y = title_y + len(title) + 2
-    box_end_y = box_start_y + len(menu_options) + 3
-    box_start_x = (w - (2 * w // 3)) // 2  # (Centered horizontally)
-    box_end_x = 2 * w // 3
-
-    stdscr.attron(curses.color_pair(1))
-    stdscr.hline(box_start_y, box_start_x, curses.ACS_HLINE, box_end_x)
-    stdscr.hline(box_end_y, box_start_x, curses.ACS_HLINE, box_end_x)
-    stdscr.vline(box_start_y + 1, box_start_x, curses.ACS_VLINE, box_end_y - box_start_y - 1)
-    stdscr.vline(box_start_y + 1, box_start_x + box_end_x - 1, curses.ACS_VLINE, box_end_y - box_start_y - 1)
-
-    stdscr.addch(box_start_y, box_start_x, curses.ACS_ULCORNER)
-    stdscr.addch(box_start_y, box_start_x + box_end_x - 1, curses.ACS_URCORNER)
-    stdscr.addch(box_end_y, box_start_x, curses.ACS_LLCORNER)
-    stdscr.addch(box_end_y, box_start_x + box_end_x - 1, curses.ACS_LRCORNER)
-
-    header_text = header
-    header_x = box_start_x + 2
-    stdscr.addstr(box_start_y, header_x, header_text, curses.A_ITALIC | curses.color_pair(1))
-    stdscr.attroff(curses.color_pair(1))
-
-    # Display each menu option
-    for i, option in enumerate(menu_options):
-        x = box_start_x + ((2 * w // 3) - len(option)) // 2  # (Centered horizontally)
-        y = box_start_y + i + 2
-
-        if i == selected_row:
-            stdscr.addstr(y, x, option, curses.A_REVERSE)
-        else:
-            stdscr.addstr(y, x, option)
-
-
-def display_menu_box2(title, title_y, w, menu_options, header, stdscr, curses, selected_row, type, isReadOnly=False, selected_hosts=None):
-
-    box_start_y = title_y + len(title) + 2
-    box_end_y = box_start_y + len(menu_options) + 3
-    box_start_x = (w - (2 * w // 3)) // 2  # (Centered horizontally)
-    box_end_x = 2 * w // 3
-
-    stdscr.attron(curses.color_pair(1))
-    stdscr.hline(box_start_y, box_start_x, curses.ACS_HLINE, box_end_x)
-    stdscr.hline(box_end_y, box_start_x, curses.ACS_HLINE, box_end_x)
-    stdscr.vline(box_start_y + 1, box_start_x, curses.ACS_VLINE, box_end_y - box_start_y - 1)
-    stdscr.vline(box_start_y + 1, box_start_x + box_end_x - 1, curses.ACS_VLINE,
-                 box_end_y - box_start_y - 1)
-
-    stdscr.addch(box_start_y, box_start_x, curses.ACS_ULCORNER)
-    stdscr.addch(box_start_y, box_start_x + box_end_x - 1, curses.ACS_URCORNER)
-    stdscr.addch(box_end_y, box_start_x, curses.ACS_LLCORNER)
-    stdscr.addch(box_end_y, box_start_x + box_end_x - 1, curses.ACS_LRCORNER)
-
-    header_text = header
-    header_x = box_start_x + 2
-    stdscr.addstr(box_start_y, header_x, header_text, curses.A_ITALIC | curses.color_pair(1))
-    stdscr.attroff(curses.color_pair(1))
-
-    ###################################################################
-    ### type 1: for main menu options
-    ### type 2: for IP host group names (Administrators, Users, ...)
-    ### type 3: for list of IP addresses in a group
-    ### type 4: display script menu
-    ###################################################################
-    if type == 1:
-        main_menu_options(menu_options, box_start_x, box_start_y, w, selected_row, stdscr, curses)
-    if type == 2:
-        groups_menu_options(menu_options, box_start_x, box_start_y, w, selected_row, stdscr, curses)
-    if type == 3:
-        host_group_options(menu_options, box_start_x, box_start_y, w, selected_row, stdscr, curses, isReadOnly, selected_hosts)
-    if type == 4:
-        script_menu_options(menu_options, title_y, title, w, selected_row, stdscr, curses)
-
-
-def display_menu_box3(pad, title, start_y, w, menu_options, header, curses, selected_row):
-    box_start_x = (w - (2 * w // 3)) // 2  # Centered horizontally
-    box_end_x = 2 * w // 3
-
-    # Draw box
-    pad.attron(curses.color_pair(1))
-    pad.hline(start_y, box_start_x, curses.ACS_HLINE, box_end_x)
-    pad.hline(start_y + len(menu_options) + 3, box_start_x, curses.ACS_HLINE, box_end_x)
-    pad.vline(start_y + 1, box_start_x, curses.ACS_VLINE, len(menu_options) + 2)
-    pad.vline(start_y + 1, box_start_x + box_end_x - 1, curses.ACS_VLINE, len(menu_options) + 2)
-
-    pad.addch(start_y, box_start_x, curses.ACS_ULCORNER)
-    pad.addch(start_y, box_start_x + box_end_x - 1, curses.ACS_URCORNER)
-    pad.addch(start_y + len(menu_options) + 3, box_start_x, curses.ACS_LLCORNER)
-    pad.addch(start_y + len(menu_options) + 3, box_start_x + box_end_x - 1, curses.ACS_LRCORNER)
-
-    # Display header
-    header_x = box_start_x + 2
-    pad.addstr(start_y, header_x, header, curses.A_ITALIC | curses.color_pair(1))
-    pad.attroff(curses.color_pair(1))
-
-    # Display each menu option
-    for i, option in enumerate(menu_options):
-        x = box_start_x + ((2 * w // 3) - len(option)) // 2  # Centered horizontally
-        y = start_y + i + 2
-
-        if i == selected_row:
-            pad.addstr(y, x, option, curses.A_REVERSE)
-        else:
-            pad.addstr(y, x, option)
-
-
-def display_menu_box4(pad, start_y, w, menu_options, header, curses, selected_row, host_counts, k, i):
+def display_menu_box4(pad, start_y, w, menu_options, header, curses, selected_row, host_counts, k, i, selected_hosts):
     # Calculate box dimensions
     box_start_x = (w - (2 * w // 3)) // 2  # Centered horizontally
     box_end_x = 2 * w // 3
@@ -150,30 +43,21 @@ def display_menu_box4(pad, start_y, w, menu_options, header, curses, selected_ro
 
             # Display the option (host IP) and the indicator
         if i == selected_row:
-            pad.addstr(y, x, f"{option}", curses.A_REVERSE)  # Highlight selected row
-            pad.addstr(y, x + len(option), indicator, curses.A_REVERSE | color_pair)
+            if i in selected_hosts:
+                pad.addstr(y, x, f"{option}", curses.color_pair(4) | curses.A_REVERSE)  # Highlight selected row
+                pad.addstr(y, x + len(option), indicator, curses.A_REVERSE | color_pair)
+            else:
+                pad.addstr(y, x, f"{option}", curses.A_REVERSE)  # Highlight selected row
+                pad.addstr(y, x + len(option), indicator, curses.A_REVERSE | color_pair)
         else:
-            pad.addstr(y, x, f"{option}")
-            pad.addstr(y, x + len(option), indicator, color_pair)
+            if i in selected_hosts:
+                pad.addstr(y, x, f"{option}", curses.color_pair(4))
+                pad.addstr(y, x + len(option), indicator, color_pair)
+            else:
+                pad.addstr(y, x, f"{option}")
+                pad.addstr(y, x + len(option), indicator, color_pair)
 
         i += 1
-
-
-
-
-def update_selected_row(selected_row, key, group_start_index, group_end_index, curses):
-    if key == curses.KEY_DOWN:
-        if selected_row < group_end_index - group_start_index:
-            selected_row += 1
-        else:
-            selected_row = 0  # Move to the first element of the next group
-    elif key == curses.KEY_UP:
-        if selected_row > 0:
-            selected_row -= 1
-        else:
-            selected_row = group_end_index - group_start_index - 1  # Move to the last element of the previous group
-
-    return selected_row
 
 
 def main_menu_options(menu_options, box_start_x, box_start_y, w, selected_row, stdscr, curses):
@@ -185,41 +69,6 @@ def main_menu_options(menu_options, box_start_x, box_start_y, w, selected_row, s
             stdscr.addstr(y, x, option, curses.A_REVERSE)
         else:
             stdscr.addstr(y, x, option)
-
-
-def groups_menu_options(menu_options, box_start_x, box_start_y, w, selected_row, stdscr, curses):
-    for i, option in enumerate(menu_options):
-        x = box_start_x + ((2 * w // 3) - len(option['name'])) // 2
-        y = box_start_y + i + 2
-
-        if i == selected_row:
-            stdscr.addstr(y, x, option['name'], curses.A_REVERSE)
-        else:
-            stdscr.addstr(y, x, option['name'])
-        y += 1
-
-
-def host_group_options(menu_options, box_start_x, box_start_y, w, selected_row, stdscr, curses, isReadOnly, selected_hosts):
-    for i, host in enumerate(menu_options):
-        y = box_start_y + i + 2
-        x = box_start_x + ((2 * w // 3) - len(host)) // 2
-
-        if i == selected_row:
-            if (isReadOnly == False):
-                if i in selected_hosts:
-                    stdscr.addstr(y, x, host, curses.color_pair(3) | curses.A_REVERSE)
-                else:
-                    stdscr.addstr(y, x, host, curses.color_pair(2) | curses.A_REVERSE)
-            else:
-                stdscr.addstr(y, x, host, curses.A_REVERSE)
-        elif i in selected_hosts:
-            stdscr.addstr(y, x, host, curses.color_pair(3))
-        else:
-            if (isReadOnly == False):
-                stdscr.addstr(y, x, host, curses.color_pair(2))
-            else:
-                stdscr.addstr(y, x, host)
-        y += 1
 
 
 def script_menu_options(menu_options, title_y, title, w, selected_row, stdscr, curses):

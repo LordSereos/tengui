@@ -3,6 +3,7 @@ import threading
 import paramiko
 import concurrent.futures
 import logging
+import time
 
 logging.basicConfig(
     filename='debug.log',  # Log file
@@ -317,32 +318,38 @@ def run_custom_command_script(hosts, ports, usernames, custom_commands):
     return 0
 
 
+# Global variables to track host statuses
 host_status = {}
+previous_status = {}
+stop_threads = False
 
 
 def is_host_alive(host_ip):
     """Ping the host to check if it's alive or unreachable."""
     try:
-        logging.debug(f"Pinging {host_ip}...")  # Debugging log
         response = subprocess.run(['ping', '-c', '1', '-W', '1', host_ip],
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE)
-        if response.returncode == 0:
-            logging.debug(f"{host_ip} is ALIVE")  # Debugging log
-            return True  # Host is alive
-        else:
-            logging.debug(f"{host_ip} is UNREACHABLE")  # Debugging log
-            return False  # Host is unreachable
+        return response.returncode == 0  # Return True if alive, False otherwise
     except Exception as e:
         logging.error(f"Error pinging {host_ip}: {e}")  # Error log
-        return False  # If any exception occurs, consider the host unreachable
+        return False
 
 
 def ping_host_in_background(host_ip):
     """Thread function to ping host and update status."""
+    global host_status, previous_status
     status = is_host_alive(host_ip)
-    host_status[host_ip] = "ALIVE" if status else "UNREACHABLE"
-    logging.debug(f"Updated {host_ip} status to {host_status[host_ip]}")  # Debugging log
+    new_status = "ALIVE" if status else "UNREACHABLE"
+
+    if host_ip in previous_status and previous_status[host_ip] != new_status:
+        # Log status change
+        logging.debug(f"STATUS {host_ip}: {previous_status[host_ip]} -> {new_status}")
+
+    # Update the current status and previous status dictionaries
+    host_status[host_ip] = new_status
+    previous_status[host_ip] = new_status
+    #logging.debug(f"Updated {host_ip} status to {new_status}")  # Log current update
 
 
 def start_ping_checks(host_ips):
@@ -352,14 +359,12 @@ def start_ping_checks(host_ips):
         thread = threading.Thread(target=ping_host_in_background, args=(ip,))
         thread.daemon = True  # Mark as daemon so it doesn't block the program from exiting
         thread.start()
-        logging.debug(f"Started pinging thread for {ip}")  # Debugging log
+        #logging.debug(f"Started pinging thread for {ip}")  # Debugging log
 
 
-import time
-
-
-# Function to ping hosts and repeat every 30 seconds
-def repeated_ping(host_ips, interval=10):
+def repeated_ping(host_ips, interval=30):
     """Ping hosts every 'interval' seconds."""
-    start_ping_checks(host_ips)
-    threading.Timer(interval, repeated_ping, [host_ips, interval]).start()
+    global stop_threads
+    while not stop_threads:  # Continue only if stop_threads is False
+        start_ping_checks(host_ips)
+        time.sleep(interval)
