@@ -131,8 +131,8 @@ def display_help_modal(pad, pad_pos, curses):
     # Clear the area behind the modal
 
     # Draw the box for the modal
-    curses.init_pair(2, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
-    modal_win.attron(curses.color_pair(2))
+    curses.init_pair(5, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
+    modal_win.attron(curses.color_pair(5))
     modal_win.box()
 
     # Add the modal text inside the box
@@ -144,10 +144,11 @@ def display_help_modal(pad, pad_pos, curses):
             prefix = line[:5]
             suffix = line[5:]
             # Apply bold attribute to the prefix
-            modal_win.addstr(i + 1, 1, prefix, curses.A_BOLD | curses.color_pair(2))
+            modal_win.addstr(i + 1, 1, prefix, curses.A_BOLD | curses.color_pair(5))
             # Add the remaining part of the line without bold attribute
             modal_win.addstr(suffix)
-    modal_win.attroff(curses.color_pair(2))
+    modal_win.attroff(curses.color_pair(5))
+
 
 
 def display_confirmation_modal(onIt, family, height, width, host, port, username, stdscr, curses):
@@ -567,3 +568,50 @@ def script_menu_modal(stdscr, family, height, width, hosts, ports, usernames, do
                 modal.refresh()
 
 
+
+def display_execute_remote(stdscr, h, w, hosts, ports, usernames, curses):
+    center_y = h // 2
+    center_x = w // 2
+
+    modal_height = 12
+    modal_width = w - 10
+
+    modal_y = center_y - modal_height // 2
+    modal_x = center_x - modal_width // 2
+
+    modal = curses.newwin(modal_height, modal_width, modal_y, modal_x)
+    modal.border()
+
+    curses.init_pair(5, curses.COLOR_RED, curses.COLOR_BLACK)
+
+    directory_input = ''
+
+    modal.addstr(1, 2, "Write a one-liner command which will execute on the remote host(s).")
+    modal.addstr(2, 2, 'Results will be in /tengui/modules/runCmd')
+    modal.addstr(9, 2, 'Press ENTER to confirm')
+    modal.addstr(10, 2, 'Press q to go back')
+
+    modal.refresh()
+
+    while True:
+        curses.echo()
+        stdscr.move(modal_y + 4, modal_x + 2)
+        stdscr.clrtoeol()
+        stdscr.addstr(modal_y + 4, modal_x + 2, directory_input)
+        curses.noecho()
+        modal.addstr(10, 2, 'Press q to go back')
+
+        key = stdscr.getch()
+
+        if key == curses.KEY_ENTER or key in [10, 13]:
+            functions.run_custom_command_script(hosts, ports, usernames, directory_input)
+            modal.addstr(7, 2, "Commands ran successfully", curses.A_BOLD)
+            modal.addstr(10, 2, 'Press q to go back')
+            modal.refresh()
+        elif key == ord('q'):
+            break
+        elif key == curses.KEY_BACKSPACE or key == 127:
+            directory_input = directory_input[:-1]
+        else:
+            directory_input += chr(key)
+            modal.refresh()

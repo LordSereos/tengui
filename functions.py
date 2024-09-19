@@ -4,13 +4,16 @@ import paramiko
 import concurrent.futures
 import logging
 import time
+import io
+
 
 logging.basicConfig(
     filename='debug.log',  # Log file
-    level=logging.DEBUG,  # Log level (DEBUG to capture all details)
+    level=logging.WARNING,  # Log level (DEBUG to capture all details)
     format='%(asctime)s - %(levelname)s - %(message)s',  # Log format
     filemode='w'  # Overwrite the log file each time the script runs
 )
+
 
 script_paths = {
     "check_ports": "./modules/ports/check.sh",
@@ -300,10 +303,36 @@ def get_port_info(hosts, ports, usernames, *args):
     return 0
 
 
+# def run_custom_command_script(hosts, ports, usernames, custom_commands):
+#     commands = []
+#     print(f" sent {custom_commands} ")
+#     for i, _ in enumerate(hosts):
+#         command = f"./modules/runCmd/runCmd.sh {usernames[i]} {hosts[i]} {ports[i]} {custom_commands}"
+#         commands.append(command)
+#
+#     with concurrent.futures.ThreadPoolExecutor() as executor:
+#         futures = [executor.submit(execute_command, cmd) for cmd in commands]
+#         for future in concurrent.futures.as_completed(futures):
+#             try:
+#                 future.result()
+#             except Exception as e:
+#                 print(f"ERROR: {e}")
+#
+#     return 0
+
 def run_custom_command_script(hosts, ports, usernames, custom_commands):
     commands = []
-    print(f" sent {custom_commands} ")
-    for i, _ in enumerate(hosts):
+
+    if isinstance(hosts, str):
+        hosts = [hosts]
+    if isinstance(ports, str):
+        ports = [ports]
+    if isinstance(usernames, str):
+        usernames = [usernames]
+
+    logging.debug(f"Sent commands: {custom_commands}")
+
+    for i in range(len(hosts)):
         command = f"./modules/runCmd/runCmd.sh {usernames[i]} {hosts[i]} {ports[i]} {custom_commands}"
         commands.append(command)
 
@@ -368,3 +397,154 @@ def repeated_ping(host_ips, interval=30):
     while not stop_threads:  # Continue only if stop_threads is False
         start_ping_checks(host_ips)
         time.sleep(interval)
+
+
+def ssh_connect(host, port, username):
+    """Establish an SSH connection."""
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(host, port=port, username=username)
+    return ssh
+
+
+def execute_command2(ssh, command):
+    """Execute a command on the remote host and return the output."""
+    stdin, stdout, stderr = ssh.exec_command(command)
+    return stdout.read().decode() + stderr.read().decode()
+
+
+def interactive_shell(stdscr, host, port, username, curses):
+    """Simulate an interactive shell session with the remote host."""
+    ssh = ssh_connect(host, port, username)
+
+    center_y = stdscr.getmaxyx()[0] // 2
+    center_x = stdscr.getmaxyx()[1] // 2
+
+    modal_height = 20
+    modal_width = stdscr.getmaxyx()[1] - 10
+
+    modal_y = center_y - modal_height // 2
+    modal_x = center_x - modal_width // 2
+
+    modal = curses.newwin(modal_height, modal_width, modal_y, modal_x)
+    modal.border()
+
+    # Create a pad for scrolling output
+    pad_height = 200  # Total height of pad
+    pad_width = modal_width - 2
+    output_pad = curses.newpad(pad_height, pad_width)
+
+    modal.addstr(1, 2, "Interactive remote shell. Type your commands below.")
+    modal.addstr(2, 2, 'Press ENTER to execute, q to quit.')
+
+    modal.refresh()
+
+    current_y = 0  # Track the current line position in the pad
+    view_y = 0     # Track the visible part of the pad
+    command = ''   # Initialize command
+
+    while True:
+        # Draw the command input line
+        modal.addstr(modal_height - 2, 2, 'Command: ')
+        modal.addstr(modal_height - 2, 10, command + ' ' * (modal_width - 10 - len(command)))
+        modal.refresh()
+
+        key = modal.getch()
+
+        # Handle ENTER key to execute the command
+        if key == curses.KEY_ENTER or key in [10, 13]:
+            if command:
+                try:
+                    output = execute_command2(ssh, command)
+                    logging.warning(f"Output of {command}: {output}")
+                    output_lines = output.splitlines()
+
+                    # Add new output to the pad
+                    for line in output_lines:
+                        if current_y < pad_height:
+                            output_pad.addstr(current_y, 0, line)
+                            current_y += 1
+                        else:
+                            # Scroll up to make space for new lines
+                            output_pad.scroll(-1)
+                            output_pad.addstr(pad_height - 1, 0, line)  # Add line at the bottom
+
+                    # Adjust view_y if necessary to ensure last output is visible
+                    if current_y > (view_y + (modal_height - 5)):
+                        view_y = max(0, current_y - (modal_height - 5))
+
+                    # Update the visible part of the pad
+                    output_pad.refresh(view_y, 0, modal_y + 3, modal_x + 1, modal_y + modal_height - 3,
+                                       modal_x + modal_width - 1)
+
+                    command = ''  # Clear command after execution
+
+                except Exception as e:
+                    error_message = f"Error: {e}"
+                    if current_y < pad_height:
+                        output_pad.addstr(current_y, 0, error_message)
+                        current_y += 1
+                    else:
+                        output_pad.scroll(-1)
+                        output_pad.addstr(pad_height - 1, 0, error_message)
+
+                    # Adjust view_y if necessary to ensure error message is visible
+                    if current_y > (view_y + (modal_height - 4)):
+                        view_y = max(0, current_y - (modal_height - 4))
+
+                    # Update the visible part of the pad
+                    output_pad.refresh(view_y, 0, modal_y + 3, modal_x + 1, modal_y + modal_height - 3,
+                                       modal_x + modal_width - 1)
+
+        # Handle 'q' key to quit
+        elif key == ord('q'):
+            break
+
+        # Handle backspace for removing last character in command
+        elif key == curses.KEY_BACKSPACE or key == 127:
+            command = command[:-1]
+
+        # Handle scrolling with arrow keys (up and down)
+        elif key == curses.KEY_UP:
+            if view_y > 0:  # Prevent scrolling beyond the top
+                view_y -= 1
+                output_pad.refresh(view_y, 0, modal_y + 3, modal_x + 1, modal_y + modal_height - 3,
+                                   modal_x + modal_width - 1)
+
+        elif key == curses.KEY_DOWN:
+            if view_y + (modal_height - 4) < current_y:  # Prevent scrolling beyond the bottom
+                view_y += 1
+                output_pad.refresh(view_y, 0, modal_y + 3, modal_x + 1, modal_y + modal_height - 3,
+                                   modal_x + modal_width - 1)
+
+        # Handle escape sequences (arrow keys and other special keys)
+        elif key == 27:  # Escape sequence
+            key2 = modal.getch()  # Get the second part of the escape sequence
+            if key2 == 91:  # Escape sequence for arrow keys
+                key3 = modal.getch()  # Get the final part of the escape sequence
+                if key3 == 65:  # Arrow Up
+                    if view_y > 0:  # Prevent scrolling beyond the top
+                        view_y -= 1
+                        output_pad.refresh(view_y, 0, modal_y + 3, modal_x + 1, modal_y + modal_height - 3,
+                                           modal_x + modal_width - 1)
+                elif key3 == 66:  # Arrow Down
+                    if view_y + (modal_height - 5) < current_y:  # Prevent scrolling beyond the bottom
+                        view_y += 1
+                        output_pad.refresh(view_y, 0, modal_y + 3, modal_x + 1, modal_y + modal_height - 3,
+                                           modal_x + modal_width - 1)
+
+        # Handle printable character input for the command, excluding escape sequences
+        elif 32 <= key <= 126:  # Only allow printable ASCII characters
+            command += chr(key)
+
+    ssh.close()
+
+
+
+
+
+
+
+
+
+

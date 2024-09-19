@@ -371,7 +371,10 @@ def display_info(stdscr, host, port, username):
         elif key == ord('h'):
             modal_visible = not modal_visible
         elif key == ord('u'):
-            TODO: Open execute command modal fromm boxes.script_menu_modal
+            logging.debug(f"Host {type(host)}, port {port} and username {username}")
+            boxes.display_execute_remote(stdscr, h, w, host, port, username, curses)
+        elif key == ord('s'):
+            functions.interactive_shell(stdscr, host, port, username, curses)
         elif key == curses.KEY_ENTER or key == 10:
             boxes.display_confirmation_modal(onIt, family, h, w, host, port, username, stdscr, curses)
         elif key == ord('q'):
