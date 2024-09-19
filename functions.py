@@ -1,6 +1,15 @@
 import subprocess
+import threading
 import paramiko
 import concurrent.futures
+import logging
+
+logging.basicConfig(
+    filename='debug.log',  # Log file
+    level=logging.DEBUG,  # Log level (DEBUG to capture all details)
+    format='%(asctime)s - %(levelname)s - %(message)s',  # Log format
+    filemode='w'  # Overwrite the log file each time the script runs
+)
 
 script_paths = {
     "check_ports": "./modules/ports/check.sh",
@@ -38,7 +47,7 @@ def get_elements_for_ip(ip_address, element):
     return None
 
 
-def set_window_param(stdscr, title):
+def set_window_param(stdscr):
     ###################################################################
     ### Get parameters of opened tab of the terminal.
     ### Used for displaying information dynamically according to the
@@ -49,10 +58,23 @@ def set_window_param(stdscr, title):
     ###################################################################
     h, w = stdscr.getmaxyx()
 
-    title_x = w // 2 - len(title[0]) // 2
-    title_y = 2
+    # title_x = w // 2 - len(title[0]) // 2
+    upper_y = 0
 
-    return h, w, title_x, title_y, 0
+    return h, w, upper_y, 0
+
+
+def set_current_unintended(h, host_counts):
+    unintended_lines = 0
+    intended_lines = 0
+    for i in range(h):
+        if host_counts[i]+4 + intended_lines + unintended_lines >= h:
+            break
+
+        intended_lines += host_counts[i]
+        unintended_lines += 4
+
+    return intended_lines, unintended_lines
 
 
 def run_shell_script(script_name, host, port, username, *args):
@@ -294,3 +316,50 @@ def run_custom_command_script(hosts, ports, usernames, custom_commands):
 
     return 0
 
+
+host_status = {}
+
+
+def is_host_alive(host_ip):
+    """Ping the host to check if it's alive or unreachable."""
+    try:
+        logging.debug(f"Pinging {host_ip}...")  # Debugging log
+        response = subprocess.run(['ping', '-c', '1', '-W', '1', host_ip],
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE)
+        if response.returncode == 0:
+            logging.debug(f"{host_ip} is ALIVE")  # Debugging log
+            return True  # Host is alive
+        else:
+            logging.debug(f"{host_ip} is UNREACHABLE")  # Debugging log
+            return False  # Host is unreachable
+    except Exception as e:
+        logging.error(f"Error pinging {host_ip}: {e}")  # Error log
+        return False  # If any exception occurs, consider the host unreachable
+
+
+def ping_host_in_background(host_ip):
+    """Thread function to ping host and update status."""
+    status = is_host_alive(host_ip)
+    host_status[host_ip] = "ALIVE" if status else "UNREACHABLE"
+    logging.debug(f"Updated {host_ip} status to {host_status[host_ip]}")  # Debugging log
+
+
+def start_ping_checks(host_ips):
+    """Start background ping checks for all hosts."""
+    for ip in host_ips:
+        # Start a thread for each host to ping in the background
+        thread = threading.Thread(target=ping_host_in_background, args=(ip,))
+        thread.daemon = True  # Mark as daemon so it doesn't block the program from exiting
+        thread.start()
+        logging.debug(f"Started pinging thread for {ip}")  # Debugging log
+
+
+import time
+
+
+# Function to ping hosts and repeat every 30 seconds
+def repeated_ping(host_ips, interval=10):
+    """Ping hosts every 'interval' seconds."""
+    start_ping_checks(host_ips)
+    threading.Timer(interval, repeated_ping, [host_ips, interval]).start()

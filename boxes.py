@@ -107,36 +107,58 @@ def display_menu_box3(pad, title, start_y, w, menu_options, header, curses, sele
             pad.addstr(y, x, option)
 
 
-def display_menu_box4(pad, start_y, w, menu_options, header, curses, selected_row, host_counts):
+def display_menu_box4(pad, start_y, w, menu_options, header, curses, selected_row, host_counts, k, i):
+    # Calculate box dimensions
     box_start_x = (w - (2 * w // 3)) // 2  # Centered horizontally
     box_end_x = 2 * w // 3
+    box_height = len(menu_options) + 4  # Add some padding for header/footer
 
-    # Draw box
+    # Draw the box within the pad (allow drawing outside visible area)
     pad.attron(curses.color_pair(1))
     pad.hline(start_y, box_start_x, curses.ACS_HLINE, box_end_x)
-    pad.hline(start_y + len(menu_options) + 3, box_start_x, curses.ACS_HLINE, box_end_x)
-    pad.vline(start_y + 1, box_start_x, curses.ACS_VLINE, len(menu_options) + 2)
-    pad.vline(start_y + 1, box_start_x + box_end_x - 1, curses.ACS_VLINE, len(menu_options) + 2)
+    pad.hline(start_y + box_height - 1, box_start_x, curses.ACS_HLINE, box_end_x)
+    pad.vline(start_y + 1, box_start_x, curses.ACS_VLINE, box_height - 2)
+    pad.vline(start_y + 1, box_start_x + box_end_x - 1, curses.ACS_VLINE, box_height - 2)
 
+    # Draw corners
     pad.addch(start_y, box_start_x, curses.ACS_ULCORNER)
-    pad.addch(start_y + len(menu_options) + 3, box_start_x, curses.ACS_LLCORNER)
+    pad.addch(start_y + box_height - 1, box_start_x, curses.ACS_LLCORNER)
     pad.addch(start_y, box_start_x + box_end_x - 1, curses.ACS_URCORNER)
-    pad.addch(start_y + len(menu_options) + 3, box_start_x + box_end_x - 1, curses.ACS_LRCORNER)
+    pad.addch(start_y + box_height - 1, box_start_x + box_end_x - 1, curses.ACS_LRCORNER)
 
     # Display header
     header_x = box_start_x + 2
     pad.addstr(start_y, header_x, header, curses.A_ITALIC | curses.color_pair(1))
     pad.attroff(curses.color_pair(1))
 
-    # Display each menu option
-    for i, option in enumerate(menu_options):
-        x = box_start_x + ((2 * w // 3) - len(option)) // 2  # Centered horizontally
-        y = start_y + i + 2
 
-        if i == selected_row:
-            pad.addstr(y, x, option, curses.A_REVERSE)
+    # Display each menu option
+    for j, option in enumerate(menu_options):
+        x = box_start_x + ((2 * w // 3) - len(option)) // 2  # Centered horizontally
+        y = start_y + j + 2
+
+        if option in functions.host_status:
+            if functions.host_status[option] == "ALIVE":
+                indicator = " [UP]  "
+                color_pair = curses.color_pair(2)  # Green color for alive
+            else:
+                indicator = " [DOWN]"
+                color_pair = curses.color_pair(3)  # Red color for unreachable
         else:
-            pad.addstr(y, x, option)
+            indicator = " [...]"
+            color_pair = curses.color_pair(1)  # Default color for checking
+
+            # Display the option (host IP) and the indicator
+        if i == selected_row:
+            pad.addstr(y, x, f"{option}", curses.A_REVERSE)  # Highlight selected row
+            pad.addstr(y, x + len(option), indicator, curses.A_REVERSE | color_pair)
+        else:
+            pad.addstr(y, x, f"{option}")
+            pad.addstr(y, x + len(option), indicator, color_pair)
+
+        i += 1
+
+
 
 
 def update_selected_row(selected_row, key, group_start_index, group_end_index, curses):
