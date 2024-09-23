@@ -5,6 +5,7 @@ import concurrent.futures
 import logging
 import time
 import io
+import os
 
 
 logging.basicConfig(
@@ -178,6 +179,30 @@ def get_currently_opened_ports(host, port, username):
     #return run_shell_script("get_currently_opened_ports", host, port, username)
 
 
+def get_lastb_output(host):
+    file_path = f"./modules/audit/{host}/lastb.log"
+
+    if os.path.exists(file_path):
+        with open(file_path, 'r') as file:
+            lines = file.readlines()
+
+        # Remove the last 2 lines first, then take the last 5 lines from the remaining lines
+        filtered_lines = lines[:-2]  # Remove last 2 lines
+        last_5_lines = filtered_lines[-10:]  # Get the last 5 lines from the remaining ones
+
+        logging.warning(f"Last 5 lines (after removing last 2) are: {last_5_lines}")
+        return last_5_lines
+    else:
+        raise FileNotFoundError(f"Log file {file_path} does not exist.")
+
+
+def get_port_info(hosts, ports, usernames, *args):
+    # print(args)
+    for i, _ in enumerate(hosts):
+        run_shell_script("check_ports", hosts[i-1], ports[i-1], usernames[i-1], *args[i-1])
+    return 0
+
+
 def run_backup_script(hosts, ports, usernames, *folders):
     commands = []
     for i, _ in enumerate(hosts):
@@ -262,11 +287,18 @@ def run_chkrootkit_script(hosts, ports, usernames, *folders):
     return 0
 
 
-def run_audit_setup_script(hosts, ports, usernames, *folders):
+def run_audit_setup_script(hosts, ports, usernames):
     commands = []
+
+    if isinstance(hosts, str):
+        hosts = [hosts]
+    if isinstance(ports, str):
+        ports = [ports]
+    if isinstance(usernames, str):
+        usernames = [usernames]
+
     for i, _ in enumerate(hosts):
-        folders_str = ' '.join(folders[i])
-        command = f"./modules/audit/setup.sh {usernames[i]} {hosts[i]} {ports[i]} {folders_str} > /dev/null 2>&1"
+        command = f"./modules/audit/setup.sh {usernames[i]} {hosts[i]} {ports[i]} > /dev/null 2>&1"
         commands.append(command)
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = [executor.submit(execute_command, cmd) for cmd in commands]
@@ -279,28 +311,34 @@ def run_audit_setup_script(hosts, ports, usernames, *folders):
     return 0
 
 
-def run_audit_retrieve_script(hosts, ports, usernames, *folders):
+def run_audit_retrieve_script(hosts, ports, usernames):
     commands = []
-    for i, _ in enumerate(hosts):
-        folders_str = ' '.join(folders[i])
-        command = f"./modules/audit/retrieve.sh {usernames[i]} {hosts[i]} {ports[i]} {folders_str} > /dev/null 2>&1"
+
+
+    if isinstance(hosts, str):
+        hosts = [hosts]
+    if isinstance(ports, str):
+        ports = [ports]
+    if isinstance(usernames, str):
+        usernames = [usernames]
+
+    for i in range(len(hosts)):
+        command = f"./modules/audit/retrieve.sh {usernames[i]} {hosts[i]} {ports[i]} > /dev/null 2>&1"
         commands.append(command)
+
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = [executor.submit(execute_command, cmd) for cmd in commands]
         for future in concurrent.futures.as_completed(futures):
             try:
                 future.result()
+
             except Exception as e:
                 print(f"ERROR: {e}")
 
     return 0
 
 
-def get_port_info(hosts, ports, usernames, *args):
-    print(args)
-    for i, _ in enumerate(hosts):
-        run_shell_script("check_ports", hosts[i-1], ports[i-1], usernames[i-1], *args[i-1])
-    return 0
+
 
 
 # def run_custom_command_script(hosts, ports, usernames, custom_commands):
@@ -538,6 +576,33 @@ def interactive_shell(stdscr, host, port, username, curses):
             command += chr(key)
 
     ssh.close()
+
+
+def execute_generic_script(family, host_ips, host_ports, host_usernames):
+
+    doc_ports = []
+    doc_locations = []
+    doc_manifests = []
+    doc_chkrootkit = []
+    doc_audit = []
+    for i, host in enumerate(host_ips):
+        doc_ports.append(get_elements_for_ip(host, "ports"))
+        doc_locations.append(get_elements_for_ip(host, "copy_locations"))
+        doc_manifests.append(get_elements_for_ip(host, "manifest_dirs"))
+        doc_chkrootkit.append(get_elements_for_ip(host, "chkrootkit"))
+        doc_audit.append(get_elements_for_ip(host, "audit_dirs"))
+
+    logging.warning(f"doc_ports: {doc_ports}")
+
+    if family == "SETUP AUDIT":
+        run_audit_setup_script(host_ips, host_ports, host_usernames)
+    if family == "MAKE BACKUP":
+        run_backup_script(host_ips, host_ports, host_usernames, *doc_locations)
+    if family == "CHECK PORTS":
+        get_port_info(host_ips, host_ports, host_usernames, *doc_ports)
+
+
+
 
 
 

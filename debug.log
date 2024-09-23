@@ -1,27 +1,3 @@
-2024-09-19 15:14:57,000 - WARNING - Output of ls -l: total 724
-drwxr-xr-x 2 martin martin   4096 Jul  5  2023 chkrootkit-0.58b
--rw-r--r-- 1 martin martin  42957 May 26 05:31 chkrootkit.tar.gz
-drwxr-xr-x 2 martin martin   4096 Mar  3  2024 Desktop
-drwxr-xr-x 2 martin martin   4096 Feb 20  2024 Documents
-drwxr-xr-x 2 martin martin   4096 May 13 08:56 Downloads
-drwxr-xr-x 3 root   root     4096 May 13 07:26 home
--rw-r--r-- 1 martin martin     18 Sep 19 07:12 klimb.txt
--rw-r----- 1 martin martin 538646 May 27 09:22 lynis.log
--rw-r----- 1 martin martin  94542 May 27 09:22 lynis-report.dat
-drwxr-xr-x 2 martin martin   4096 Feb 20  2024 Music
--rw-r--r-- 1 martin martin      0 May 27 09:11 newfile
--rw-r--r-- 1 martin martin      5 May 27 09:13 newfile2
-drwxr-xr-x 2 martin martin   4096 Feb 20  2024 Pictures
-drwxr-xr-x 2 martin martin   4096 Feb 20  2024 Public
-drwxr-xr-x 2 martin martin   4096 Feb 20  2024 Templates
-drwxr-xr-x 2 martin martin   4096 May 22 07:01 test
-drwxr-xr-x 2 martin martin   4096 Aug 12 02:47 test2
-drwxr-xr-x 2 martin martin   4096 Feb 20  2024 Videos
-
-2024-09-19 15:14:59,942 - WARNING - Output of pwd: /home/martin
-
-2024-09-19 15:15:03,139 - WARNING - Output of pwd: /home/martin
-
-2024-09-19 15:16:05,287 - WARNING - Output of cat klimb.txt: hello
-hello again
-
+2024-09-23 13:31:08,303 - WARNING - selected_hosts: {0}
+2024-09-23 13:31:08,303 - WARNING - flattened_hosts: [('192.168.204.5', '22', 'martin')]
+2024-09-23 13:31:09,155 - WARNING - doc_ports: [['22', '80', '443']]

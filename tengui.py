@@ -117,20 +117,20 @@ def display_menu(stdscr):
         pad.refresh(pad_pos, 0, 0, 0, h - 1, w - 1)
 
         intended_lines, unintended_lines = functions.set_current_unintended(h, host_counts)
-        footer_message = f"selected_row: {selected_row}"
-        stdscr.addstr(h - 2, 1, footer_message, curses.A_DIM | curses.A_ITALIC)
-        footer_message2 = f"pad_pos: {pad_pos}"
-        stdscr.addstr(h - 1, 1, footer_message2, curses.A_DIM | curses.A_ITALIC)
-        footer_message3 = f"h: {h}"
-        stdscr.addstr(h - 3, 1, footer_message3, curses.A_DIM | curses.A_ITALIC)
-        footer_message5 = f"hosts: {total_hosts}"
-        stdscr.addstr(h - 5, 1, footer_message5, curses.A_DIM | curses.A_ITALIC)
-        footer_message6 = f"selected: {selected_hosts}"
-        stdscr.addstr(h - 6, 1, footer_message6, curses.A_DIM | curses.A_ITALIC)
-        footer_message7 = f"unintended_lines: {unintended_lines}"
-        stdscr.addstr(h - 7, 1, footer_message7, curses.A_DIM | curses.A_ITALIC)
-        footer_message8 = f"intended_lines: {intended_lines}"
-        stdscr.addstr(h - 8, 1, footer_message8, curses.A_DIM | curses.A_ITALIC)
+        # footer_message = f"selected_row: {selected_row}"
+        # stdscr.addstr(h - 2, 1, footer_message, curses.A_DIM | curses.A_ITALIC)
+        # footer_message2 = f"pad_pos: {pad_pos}"
+        # stdscr.addstr(h - 1, 1, footer_message2, curses.A_DIM | curses.A_ITALIC)
+        # footer_message3 = f"h: {h}"
+        # stdscr.addstr(h - 3, 1, footer_message3, curses.A_DIM | curses.A_ITALIC)
+        # footer_message5 = f"hosts: {total_hosts}"
+        # stdscr.addstr(h - 5, 1, footer_message5, curses.A_DIM | curses.A_ITALIC)
+        # footer_message6 = f"selected: {selected_hosts}"
+        # stdscr.addstr(h - 6, 1, footer_message6, curses.A_DIM | curses.A_ITALIC)
+        # footer_message7 = f"unintended_lines: {unintended_lines}"
+        # stdscr.addstr(h - 7, 1, footer_message7, curses.A_DIM | curses.A_ITALIC)
+        # footer_message8 = f"intended_lines: {intended_lines}"
+        # stdscr.addstr(h - 8, 1, footer_message8, curses.A_DIM | curses.A_ITALIC)
 
 
         key = stdscr.getch()
@@ -142,15 +142,23 @@ def display_menu(stdscr):
         elif key == curses.KEY_DOWN:
             selected_row = min(total_hosts-1, selected_row + 1)
             if selected_row >= intended_lines:
-                pad_pos = min(selected_row, total_hosts - len(host_counts)*4)
+                pad_pos = min(selected_row,total_hosts + len(host_counts)*4+len(host_counts)*2-h)
         elif key == curses.KEY_ENTER or key in [10, 13]:
             if selected_hosts:
+                host_info = []
                 for index in selected_hosts:
                     if 0 <= index < len(flattened_hosts):  # Ensure index is valid
+                        host_info.append(flattened_hosts[index])
                         host, port, username = flattened_hosts[index]
-                        logging.debug(f"Selected Host - IP: {host}, Port: {port}, Username: {username}")
+                        i += 1
+                        # logging.warning(f"Selected Host - IP: {host}, Port: {port}, Username: {username}")
                     else:
                         logging.warning(f"Index {index} is out of range in flattened_hosts.")
+
+                logging.warning(f"selected_hosts: {selected_hosts}")
+                logging.warning(f"flattened_hosts: {host_info}")
+                boxes.display_script_menu(host_info, curses, stdscr)
+
             else:
                 host, port, username = flattened_hosts[selected_row]
                 display_info(stdscr, host, port, username)
@@ -183,7 +191,7 @@ def display_info(stdscr, host, port, username):
     users = functions.get_logged_in_users(host, port, username)
     services = functions.get_running_services(host, port, username)
     ports = functions.get_currently_opened_ports(host, port, username)
-
+    lastb = functions.get_lastb_output(host)
     ###################################################################
     ### Splits information into an array of strings based on line breaks.
     ###################################################################
@@ -191,6 +199,9 @@ def display_info(stdscr, host, port, username):
     users_lines = users.splitlines()
     services_lines = services.splitlines()
     ports_lines = ports.splitlines()
+    lastb_lines = [line.strip() for line in lastb if line.strip()]
+    logging.warning(f"Length of lastb: {len(lastb_lines)}")
+
 
     ###################################################################
     ### Total amount of selectable elements is going to be the sum
@@ -199,8 +210,8 @@ def display_info(stdscr, host, port, username):
     ### of information is presented below.
     ###################################################################
 
-    unintented_lines = 8 + 1
-    total_height = len(users_lines) + len(services_lines) + len(ports_lines) + unintented_lines
+    unintented_lines = 10 + 1
+    total_height = len(users_lines) + len(services_lines) + len(ports_lines) + len(lastb_lines) + unintented_lines
 
     ###################################################################
     ### Initializes a scrollable pad for displaying information.
@@ -291,6 +302,26 @@ def display_info(stdscr, host, port, username):
                 else:
                     pad.addstr(i, 4, port_info)
 
+        lastb_section_start = len(users_lines) + len(services_lines) + len(ports_lines) + 6
+        lastb_section_end = lastb_section_start + len(lastb_lines) + 1
+
+        boxes.display_pad_box(pad, f"Last unsuccessful logins", curses, lastb_section_start,
+                              lastb_section_end, w)
+
+        for i, lastb_info in enumerate(lastb_lines, start=lastb_section_start + 1):
+            if (i - 6) == selected_row:
+                if len(lastb_info) > w - 5:
+                    truncated_port = lastb_info[:w - 5]
+                    pad.addstr(i, 2, truncated_port, curses.A_REVERSE)
+                else:
+                    pad.addstr(i, 2, lastb_info, curses.A_REVERSE)
+            else:
+                if len(lastb_info) > w - 5:
+                    truncated_port = lastb_info[:w - 5]
+                    pad.addstr(i, 2, truncated_port)
+                else:
+                    pad.addstr(i, 2, lastb_info)
+
         ###################################################################
         ### Display footer:
         ### Selected row and onIt are left for debugging.
@@ -306,15 +337,12 @@ def display_info(stdscr, host, port, username):
         ### data where user thinks he is.
         ###################################################################
 
-        onIt, family = find_selected_element_in_host_info(selected_row, users_lines, services_lines, ports_lines)
-
-        #bottom_message = (f"Press 'q' to go back to the main menu, selected row is {selected_row}, "
-        #                  f"onIt = {onIt.split()[0] + '                '} ")
-        #bottom_message = (f"Press 'q' to go back to the main menu, selected row is {selected_row}, "
-        #                  f"pad_pos = {pad_pos}, modalVisible = {modal_visible}            ")
+        onIt, family = find_selected_element_in_host_info(selected_row, users_lines, services_lines, ports_lines, lastb_lines)
 
         stdscr.addstr(h - 3, 0, " " * w)
         boxes.display_footer_box(f"Press 'h' to open context menu                               ", h, stdscr, curses)
+        # bottom_message = (f"Selected row is {selected_row}, {len(lastb_lines)} onIt = {onIt.split()[0]+ '  ' + family+ ' '*10 } ")
+        # stdscr.addstr(h - 1, 0, bottom_message)
 
         ###################################################################
         ### Display the pad content on the screen.
@@ -341,12 +369,12 @@ def display_info(stdscr, host, port, username):
             if selected_row < pad_pos:
                 pad_pos = selected_row - 1
         elif key == curses.KEY_DOWN:
-            selected_row = min((len(users_lines) + len(services_lines) + len(ports_lines)), selected_row + 1)
+            selected_row = min((len(users_lines) + len(services_lines) + len(ports_lines) + len(lastb_lines)), selected_row + 1)
             if selected_row >= pad_pos + h - unintented_lines:
                 pad_pos = min(selected_row - h + unintented_lines, total_height - h)
         elif key == ord(' '):
-            selected_row = min((len(users_lines) + len(services_lines) + len(ports_lines)), pad_pos + h - 3)
-            pad_pos = min(total_height - h, h)
+            selected_row = min((len(users_lines) + len(services_lines) + len(ports_lines) + len(lastb_lines)), pad_pos + h - 3)
+            pad_pos = min(total_height - h, pad_pos+h)
         elif key == ord('y') or key == ord('Y'):
             selected_row = max(1, selected_row - h)
             if selected_row <= pad_pos:
@@ -354,25 +382,27 @@ def display_info(stdscr, host, port, username):
         elif key == ord('g') or key == ord('G'):
             # Jump to the next family list
             if family == "USERS":
-                selected_row = min((len(users_lines) + len(services_lines) + len(ports_lines)), len(users_lines) + 1)
+                selected_row = len(users_lines) + 1
             if family == "SERVICES":
-                selected_row = min((len(users_lines) + len(services_lines) + len(ports_lines)),
-                                   len(users_lines) + len(services_lines) + 1)
+                selected_row = len(users_lines) + len(services_lines) + 1
+            if family == "PORTS":
+                selected_row = len(users_lines) + len(services_lines) + len(ports_lines) + 1
             if selected_row >= pad_pos + h - 6:
-                pad_pos = min(selected_row - h + 8, selected_row + 3)
+                pad_pos = min(total_height - h, selected_row + 3)
         elif key == ord('b') or key == ord('B'):
             # Jump to the previous family list
             if family == "SERVICES":
                 selected_row = 1
             if family == "PORTS":
                 selected_row = len(users_lines) + 1
+            if family == "LASTB":
+                selected_row = len(users_lines) + len(services_lines) + 1
             if selected_row <= pad_pos:
                 pad_pos = max(0, selected_row - 1)
         elif key == ord('h'):
             modal_visible = not modal_visible
         elif key == ord('u'):
-            logging.debug(f"Host {type(host)}, port {port} and username {username}")
-            boxes.display_execute_remote(stdscr, h, w, host, port, username, curses)
+            functions.run_audit_retrieve_script(host, port, username)
         elif key == ord('s'):
             functions.interactive_shell(stdscr, host, port, username, curses)
         elif key == curses.KEY_ENTER or key == 10:
@@ -381,7 +411,7 @@ def display_info(stdscr, host, port, username):
             break
 
 
-def find_selected_element_in_host_info(selected_row, users_lines, services_lines, ports_lines):
+def find_selected_element_in_host_info(selected_row, users_lines, services_lines, ports_lines, lastb_lines):
     ###################################################################
     ### Mapping selected_row with real elements in lists, because when
     ### jumping we skip headers and empty lines
@@ -393,16 +423,19 @@ def find_selected_element_in_host_info(selected_row, users_lines, services_lines
     selected_element = 'UNDEFINED'
     family = ''
 
-    if selected_row <= len(users_lines) + len(services_lines) + len(ports_lines) + 6:
+    if selected_row <= len(users_lines) + len(services_lines) + len(ports_lines) + len(lastb_lines) + 8:
         if selected_row <= len(users_lines):
             selected_element = users_lines[selected_row - 1]
             family = "USERS"
         elif selected_row <= len(users_lines) + len(services_lines):
             selected_element = services_lines[selected_row - len(users_lines) - 1]
             family = "SERVICES"
-        elif selected_row >= len(users_lines) + len(services_lines):
+        elif selected_row <= len(users_lines) + len(services_lines) + len(ports_lines):
             selected_element = ports_lines[selected_row - len(users_lines) - len(services_lines) - 1]
             family = "PORTS"
+        elif selected_row > len(users_lines) + len(services_lines) + len(ports_lines):
+            selected_element = lastb_lines[selected_row - len(users_lines) - len(services_lines) - len(ports_lines) - 1]
+            family = "LASTB"
 
     return selected_element, family
 

@@ -4,7 +4,7 @@
 allowed_ports=("$@")
 
 LSOF_OUTPUT=$(sudo lsof -i -P -n)
-echo "$LSOF_OUTPUT"
+#echo "$LSOF_OUTPUT"
 
 ####################################################################################
 #########                                                                  

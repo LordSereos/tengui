@@ -1,4 +1,5 @@
 import functions
+import logging
 
 def display_menu_box4(pad, start_y, w, menu_options, header, curses, selected_row, host_counts, k, i, selected_hosts):
     # Calculate box dimensions
@@ -58,26 +59,6 @@ def display_menu_box4(pad, start_y, w, menu_options, header, curses, selected_ro
                 pad.addstr(y, x + len(option), indicator, color_pair)
 
         i += 1
-
-
-def main_menu_options(menu_options, box_start_x, box_start_y, w, selected_row, stdscr, curses):
-    for i, option in enumerate(menu_options):
-        x = box_start_x + ((2 * w // 3) - len(option)) // 2  # (Centered horizontally)
-        y = box_start_y + i + 2
-
-        if i == selected_row:
-            stdscr.addstr(y, x, option, curses.A_REVERSE)
-        else:
-            stdscr.addstr(y, x, option)
-
-
-def script_menu_options(menu_options, title_y, title, w, selected_row, stdscr, curses):
-    script_x = [title_y + len(title) + 4 + i for i in range(len(menu_options))]
-    for i in range(len(menu_options)):
-        # Determine the attribute (A_NORMAL or A_REVERSE) based on whether the row is selected
-        attr = curses.A_REVERSE if selected_row == script_x[i] else curses.A_NORMAL
-        # Add the string to the screen with the appropriate attribute
-        stdscr.addstr(script_x[i], w // 2 - len(menu_options[i]) // 2, menu_options[i], attr)
 
 
 def display_title_box(title, title_y, title_x, stdscr, curses):
@@ -148,7 +129,6 @@ def display_help_modal(pad, pad_pos, curses):
             # Add the remaining part of the line without bold attribute
             modal_win.addstr(suffix)
     modal_win.attroff(curses.color_pair(5))
-
 
 
 def display_confirmation_modal(onIt, family, height, width, host, port, username, stdscr, curses):
@@ -568,7 +548,6 @@ def script_menu_modal(stdscr, family, height, width, hosts, ports, usernames, do
                 modal.refresh()
 
 
-
 def display_execute_remote(stdscr, h, w, hosts, ports, usernames, curses):
     center_y = h // 2
     center_x = w // 2
@@ -615,3 +594,58 @@ def display_execute_remote(stdscr, h, w, hosts, ports, usernames, curses):
         else:
             directory_input += chr(key)
             modal.refresh()
+
+
+def display_script_menu(host_info, curses, stdscr):
+
+    host_ips = [host[0] for host in host_info]
+    host_ports = [host[1] for host in host_info]
+    host_usernames = [host[2] for host in host_info]
+
+    max_y, max_x = stdscr.getmaxyx()
+
+    modal_height = 10
+    modal_width = 40
+
+    modal_y = (max_y - modal_height) // 2
+    modal_x = (max_x - modal_width) // 2
+
+    curses.init_pair(5, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
+
+    modal = curses.newwin(modal_height, modal_width, modal_y, modal_x)
+    modal.border()
+    modal.attron(curses.color_pair(5))
+    modal.box()
+    modal.refresh()
+    modal.keypad(True)
+
+    script_options = ["SETUP AUDIT", "MAKE BACKUP", "CHECK PORTS"]
+
+    selected_row = 0
+
+    while True:
+        modal.refresh()
+
+        for i, option in enumerate(script_options):
+            option_x = (modal_width - len(option)) // 2  # Center the text horizontally
+            if selected_row == i:
+                modal.addstr(i + 2, option_x, option, curses.A_BOLD | curses.color_pair(5) | curses.A_REVERSE)
+            else:
+                modal.addstr(i + 2, option_x, option, curses.A_BOLD | curses.color_pair(5))
+
+        # modal.addstr(modal_height-2, 1, f"{host_ips}", curses.A_DIM | curses.A_ITALIC)
+
+        key = modal.getch()
+
+        if key == curses.KEY_UP:
+            selected_row = max(0, selected_row - 1)
+        elif key == curses.KEY_DOWN:
+            selected_row = min(len(script_options)-1, selected_row + 1)
+        elif key == curses.KEY_ENTER or key in [10, 13]:
+            functions.execute_generic_script(script_options[selected_row], host_ips, host_ports, host_usernames)
+            modal.addstr(modal_height - 3, 1, f"Success!", curses.A_DIM | curses.A_ITALIC)
+            modal.refresh()
+        elif key == ord('q'):
+            break
+
+
