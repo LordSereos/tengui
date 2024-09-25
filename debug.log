@@ -1,3 +1,18 @@
-2024-09-23 13:31:08,303 - WARNING - selected_hosts: {0}
-2024-09-23 13:31:08,303 - WARNING - flattened_hosts: [('192.168.204.5', '22', 'martin')]
-2024-09-23 13:31:09,155 - WARNING - doc_ports: [['22', '80', '443']]
+2024-09-25 12:01:21,780 - WARNING - host_ips: ['192.168.204.5']
+2024-09-25 12:01:21,780 - WARNING - 0 iteration 192.168.204.5
+2024-09-25 12:01:21,780 - WARNING - Manifest location: [['/home/martin']]
+2024-09-25 12:01:21,780 - WARNING - From here: ['/home/martin']
+2024-09-25 12:01:22,949 - WARNING - LAST 10 OF MANIFEST: []
+2024-09-25 12:01:22,950 - WARNING - manifest_Lines: []
+2024-09-25 12:02:39,629 - WARNING - host_ips: ['192.168.204.5']
+2024-09-25 12:02:39,629 - WARNING - 0 iteration 192.168.204.5
+2024-09-25 12:02:39,629 - WARNING - Manifest location: [['/home/martin']]
+2024-09-25 12:02:39,629 - WARNING - From here: ['/home/martin']
+2024-09-25 12:02:40,809 - WARNING - LAST 10 OF MANIFEST: ['2024-09-25 12:02:40 /home/martin/.local/share/gvfs-metadata/root-26839a8d.log\n', '2024-09-25 12:02:40 /home/martin/.local/share/tracker/data/tracker-store.journal\n', '2024-09-25 12:02:40 /home/martin/klimb.txt\n', '2024-09-25 12:02:40 /home/martin/.cache/tracker/meta.db\n', '2024-09-25 12:02:40 /home/martin/.cache/tracker/meta.db-wal\n', '2024-09-25 12:02:40 /home/martin/.cache/tracker/meta.db-shm\n', '2024-09-25 12:02:40 /home/martin/test2/hello\n']
+2024-09-25 12:02:40,809 - WARNING - manifest_Lines: ['2024-09-25 12:02:40 /home/martin/.local/share/gvfs-metadata/root-26839a8d.log', '2024-09-25 12:02:40 /home/martin/.local/share/tracker/data/tracker-store.journal', '2024-09-25 12:02:40 /home/martin/klimb.txt', '2024-09-25 12:02:40 /home/martin/.cache/tracker/meta.db', '2024-09-25 12:02:40 /home/martin/.cache/tracker/meta.db-wal', '2024-09-25 12:02:40 /home/martin/.cache/tracker/meta.db-shm', '2024-09-25 12:02:40 /home/martin/test2/hello']
+2024-09-25 12:34:09,941 - WARNING - host_ips: ['192.168.204.5']
+2024-09-25 12:34:09,941 - WARNING - 0 iteration 192.168.204.5
+2024-09-25 12:34:09,942 - WARNING - Manifest location: [['/home/martin']]
+2024-09-25 12:34:09,942 - WARNING - From here: ['/home/martin']
+2024-09-25 12:34:11,109 - WARNING - LAST 10 OF MANIFEST: ['2024-09-25 12:02:40 /home/martin/.local/share/gvfs-metadata/root-26839a8d.log\n', '2024-09-25 12:02:40 /home/martin/.local/share/tracker/data/tracker-store.journal\n', '2024-09-25 12:02:40 /home/martin/klimb.txt\n', '2024-09-25 12:02:40 /home/martin/.cache/tracker/meta.db\n', '2024-09-25 12:02:40 /home/martin/.cache/tracker/meta.db-wal\n', '2024-09-25 12:02:40 /home/martin/.cache/tracker/meta.db-shm\n', '2024-09-25 12:02:40 /home/martin/test2/hello\n', '2024-09-25 12:34:10 /home/martin/.local/share/gvfs-metadata/root-62c30d9c.log\n', '2024-09-25 12:34:10 /home/martin/.local/share/gvfs-metadata/root\n']
+2024-09-25 12:34:11,109 - WARNING - manifest_Lines: ['2024-09-25 12:02:40 /home/martin/.local/share/gvfs-metadata/root-26839a8d.log', '2024-09-25 12:02:40 /home/martin/.local/share/tracker/data/tracker-store.journal', '2024-09-25 12:02:40 /home/martin/klimb.txt', '2024-09-25 12:02:40 /home/martin/.cache/tracker/meta.db', '2024-09-25 12:02:40 /home/martin/.cache/tracker/meta.db-wal', '2024-09-25 12:02:40 /home/martin/.cache/tracker/meta.db-shm', '2024-09-25 12:02:40 /home/martin/test2/hello', '2024-09-25 12:34:10 /home/martin/.local/share/gvfs-metadata/root-62c30d9c.log', '2024-09-25 12:34:10 /home/martin/.local/share/gvfs-metadata/root']

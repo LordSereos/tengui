@@ -188,10 +188,26 @@ def get_lastb_output(host):
 
         # Remove the last 2 lines first, then take the last 5 lines from the remaining lines
         filtered_lines = lines[:-2]  # Remove last 2 lines
-        last_5_lines = filtered_lines[-10:]  # Get the last 5 lines from the remaining ones
+        last_5_lines = filtered_lines[:10]  # Get the last 5 lines from the remaining ones
 
-        logging.warning(f"Last 5 lines (after removing last 2) are: {last_5_lines}")
+        # logging.warning(f"Last 5 lines (after removing last 2) are: {last_5_lines}")
         return last_5_lines
+    else:
+        raise FileNotFoundError(f"Log file {file_path} does not exist.")
+
+
+def get_manifest_output(host):
+    file_path = f"./modules/hasher/{host}/changelog"
+
+    if os.path.exists(file_path):
+        with open(file_path, 'r') as file:
+            lines = file.readlines()
+
+
+        last_lines = lines[-10:]  # Get the last 5 lines from the remaining ones
+
+        logging.warning(f"LAST 10 OF MANIFEST: {last_lines}")
+        return last_lines
     else:
         raise FileNotFoundError(f"Log file {file_path} does not exist.")
 
@@ -255,7 +271,16 @@ def run_lynis(usernames, hosts, ports):
 
 def run_manifest_script(hosts, ports, usernames, *folders):
     commands = []
+
+    if isinstance(hosts, str):
+        hosts = [hosts]
+    if isinstance(ports, str):
+        ports = [ports]
+    if isinstance(usernames, str):
+        usernames = [usernames]
+
     for i, _ in enumerate(hosts):
+        logging.warning(f"From here: {folders[i]}")
         command = f"./modules/hasher/hasher.sh {usernames[i]} {hosts[i]} {ports[i]} {folders[i]} > /dev/null 2>&1"
         commands.append(command)
 
@@ -494,7 +519,7 @@ def interactive_shell(stdscr, host, port, username, curses):
             if command:
                 try:
                     output = execute_command2(ssh, command)
-                    logging.warning(f"Output of {command}: {output}")
+                    # logging.warning(f"Output of {command}: {output}")
                     output_lines = output.splitlines()
 
                     # Add new output to the pad
@@ -585,14 +610,20 @@ def execute_generic_script(family, host_ips, host_ports, host_usernames):
     doc_manifests = []
     doc_chkrootkit = []
     doc_audit = []
+
+    host_ips = [host_ips] if isinstance(host_ips, str) else host_ips
+
+    logging.warning(f"host_ips: {host_ips}")
+
     for i, host in enumerate(host_ips):
+        logging.warning(f"{i} iteration {host}")
         doc_ports.append(get_elements_for_ip(host, "ports"))
         doc_locations.append(get_elements_for_ip(host, "copy_locations"))
         doc_manifests.append(get_elements_for_ip(host, "manifest_dirs"))
         doc_chkrootkit.append(get_elements_for_ip(host, "chkrootkit"))
         doc_audit.append(get_elements_for_ip(host, "audit_dirs"))
 
-    logging.warning(f"doc_ports: {doc_ports}")
+    # logging.warning(f"doc_ports: {doc_ports}")
 
     if family == "SETUP AUDIT":
         run_audit_setup_script(host_ips, host_ports, host_usernames)
@@ -600,6 +631,10 @@ def execute_generic_script(family, host_ips, host_ports, host_usernames):
         run_backup_script(host_ips, host_ports, host_usernames, *doc_locations)
     if family == "CHECK PORTS":
         get_port_info(host_ips, host_ports, host_usernames, *doc_ports)
+    if family == "MANIFEST":
+        logging.warning(f"Manifest location: {doc_manifests}")
+        # logging.warning(f"portsss location: {doc_ports}")
+        run_manifest_script(host_ips, host_ports, host_usernames, *doc_manifests)
 
 
 

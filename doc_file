@@ -1,3 +1,8 @@
+192.168.204.6
+  ports: [22]
+  copy_locations: []
+  manifest_dirs: [/home/maaartin]
+
 192.168.204.5:
   ports: [22, 80, 443]
   copy_locations: ["/home/martin/test", "/home/martin/test2"]
@@ -11,7 +16,7 @@
   copy_locations: ["/home/martin/test3", "/home/martin/test4"]
   manifest_dirs: [/home/martin/test4]
   users: [martin]
-  manifest_dirs: [/home/martin]
+  manifest_dirs: [/home/martin1]
   chkrootkit: ["/home/martin"]
   audit_dirs: ["/home/martin"]
 
