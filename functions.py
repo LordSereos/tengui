@@ -202,6 +202,8 @@ def get_manifest_output(host):
     if os.path.exists(file_path):
         with open(file_path, 'r') as file:
             lines = file.readlines()
+        if not lines:
+            return ["Nothing here..."]
 
         filtered_lines = [line for line in lines if '/.' not in line]
         last_lines = filtered_lines[-10:]
@@ -209,8 +211,20 @@ def get_manifest_output(host):
         logging.warning(f"LAST 10 OF MANIFEST (without hidden paths): {last_lines}")
         return last_lines
     else:
-        raise FileNotFoundError(f"Log file {file_path} does not exist.")
+        return ["Nothing here."]
 
+
+def get_checked_ports(host):
+    file_path = f"./modules/ports/outputs/{host}-check_ports.info"
+    if os.path.exists(file_path):
+
+        with open(file_path, 'r') as file:
+            lines = file.readlines()
+
+        logging.warning(f"Checked ports lines: {lines}")
+        return lines
+    else:
+        return ["You haven't run CHECK PORTS script for this host."]
 
 def get_port_info(hosts, ports, usernames, *args):
     # print(args)
@@ -231,22 +245,6 @@ def run_concrete_script(script_path, hosts, ports, usernames, *folders):
 
     for i, _ in enumerate(hosts):
         command = f"{script_path} {usernames[i]} {hosts[i]} {ports[i]} {folders[i]} > /dev/null 2>&1"
-        commands.append(command)
-
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = [executor.submit(execute_command, cmd) for cmd in commands]
-        for future in concurrent.futures.as_completed(futures):
-            try:
-                future.result()
-            except Exception as e:
-                print(f"ERROR: {e}")
-
-    return 0
-def run_backup_script(hosts, ports, usernames, *folders):
-    commands = []
-    for i, _ in enumerate(hosts):
-        folders_str = ' '.join(folders[i - 1])
-        command = f"./modules/backup/backupFiles.sh {usernames[i - 1]} {hosts[i - 1]} {ports[i - 1]} {folders_str} > /dev/null 2>&1"
         commands.append(command)
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -290,152 +288,6 @@ def run_lynis(usernames, hosts, ports):
 #     return 0
 
 # RUNNING ALL HOSTS CONCURRENTLY
-
-
-def run_manifest_script(hosts, ports, usernames, *folders):
-    commands = []
-
-    if isinstance(hosts, str):
-        hosts = [hosts]
-    if isinstance(ports, str):
-        ports = [ports]
-    if isinstance(usernames, str):
-        usernames = [usernames]
-
-    for i, _ in enumerate(hosts):
-        command = f"./modules/hasher/hasher.sh {usernames[i]} {hosts[i]} {ports[i]} {folders[i]} > /dev/null 2>&1"
-        commands.append(command)
-
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = [executor.submit(execute_command, cmd) for cmd in commands]
-        for future in concurrent.futures.as_completed(futures):
-            try:
-                future.result()
-            except Exception as e:
-                print(f"ERROR: {e}")
-
-    return 0
-
-
-def run_chkrootkit_script(hosts, ports, usernames, *folders):
-    commands = []
-
-    if isinstance(hosts, str):
-        hosts = [hosts]
-    if isinstance(ports, str):
-        ports = [ports]
-    if isinstance(usernames, str):
-        usernames = [usernames]
-
-    for i, _ in enumerate(hosts):
-        # folders_str = ' '.join(folders[i])
-        command = f"./modules/chkrootkit/rootkit.sh {usernames[i]} {hosts[i]} {ports[i]} {folders[i]} > /dev/null 2>&1"
-        commands.append(command)
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = [executor.submit(execute_command, cmd) for cmd in commands]
-        for future in concurrent.futures.as_completed(futures):
-            try:
-                future.result()
-            except Exception as e:
-                print(f"ERROR: {e}")
-
-    return 0
-
-
-def run_audit_setup_script(hosts, ports, usernames):
-    commands = []
-
-    if isinstance(hosts, str):
-        hosts = [hosts]
-    if isinstance(ports, str):
-        ports = [ports]
-    if isinstance(usernames, str):
-        usernames = [usernames]
-
-    for i, _ in enumerate(hosts):
-        command = f"./modules/audit/setup.sh {usernames[i]} {hosts[i]} {ports[i]} > /dev/null 2>&1"
-        commands.append(command)
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = [executor.submit(execute_command, cmd) for cmd in commands]
-        for future in concurrent.futures.as_completed(futures):
-            try:
-                future.result()
-            except Exception as e:
-                print(f"ERROR: {e}")
-
-    return 0
-
-
-def run_audit_retrieve_script(hosts, ports, usernames):
-    commands = []
-
-
-    if isinstance(hosts, str):
-        hosts = [hosts]
-    if isinstance(ports, str):
-        ports = [ports]
-    if isinstance(usernames, str):
-        usernames = [usernames]
-
-    for i in range(len(hosts)):
-        command = f"./modules/audit/retrieve.sh {usernames[i]} {hosts[i]} {ports[i]} > /dev/null 2>&1"
-        commands.append(command)
-
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = [executor.submit(execute_command, cmd) for cmd in commands]
-        for future in concurrent.futures.as_completed(futures):
-            try:
-                future.result()
-
-            except Exception as e:
-                print(f"ERROR: {e}")
-
-    return 0
-
-
-# def run_custom_command_script(hosts, ports, usernames, custom_commands):
-#     commands = []
-#     print(f" sent {custom_commands} ")
-#     for i, _ in enumerate(hosts):
-#         command = f"./modules/runCmd/runCmd.sh {usernames[i]} {hosts[i]} {ports[i]} {custom_commands}"
-#         commands.append(command)
-#
-#     with concurrent.futures.ThreadPoolExecutor() as executor:
-#         futures = [executor.submit(execute_command, cmd) for cmd in commands]
-#         for future in concurrent.futures.as_completed(futures):
-#             try:
-#                 future.result()
-#             except Exception as e:
-#                 print(f"ERROR: {e}")
-#
-#     return 0
-
-
-def run_custom_command_script(hosts, ports, usernames, custom_commands):
-    commands = []
-
-    if isinstance(hosts, str):
-        hosts = [hosts]
-    if isinstance(ports, str):
-        ports = [ports]
-    if isinstance(usernames, str):
-        usernames = [usernames]
-
-    logging.debug(f"Sent commands: {custom_commands}")
-
-    for i in range(len(hosts)):
-        command = f"./modules/runCmd/runCmd.sh {usernames[i]} {hosts[i]} {ports[i]} {custom_commands}"
-        commands.append(command)
-
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = [executor.submit(execute_command, cmd) for cmd in commands]
-        for future in concurrent.futures.as_completed(futures):
-            try:
-                future.result()
-            except Exception as e:
-                print(f"ERROR: {e}")
-
-    return 0
 
 
 # Global variables to track host statuses
@@ -588,7 +440,7 @@ def interactive_shell(stdscr, host, port, username, curses):
                                        modal_x + modal_width - 1)
 
         # Handle 'q' key to quit
-        elif key == ord('q'):
+        elif key == 20:  # Detect Ctrl+Q
             break
 
         # Handle backspace for removing last character in command

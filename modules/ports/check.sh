@@ -19,7 +19,7 @@ while read -r line; do
     CONNECTION_MODE=$(echo "$MODE" | awk -F '[()]' '{print $2}')
     
     if [[ "$CONNECTION_MODE" == "LISTEN" ]] && [[ ! "${allowed_ports[@]}" =~ "${PORT}" ]]; then
-        echo "WARNING: THIS SHOULD BE CLOSED --> $line"
+        echo "SHOULD BE CLOSED: $line"
     fi
 done <<< "$LSOF_OUTPUT"
 
@@ -31,6 +31,6 @@ done <<< "$LSOF_OUTPUT"
 
 for port in "${allowed_ports[@]}"; do
     if ! grep -q ":$port " <<< "$LSOF_OUTPUT"; then
-        echo "WARNING: PORT $port IS NOT LISTENING"
+        echo "SHOULD BE LISTENING: $port"
     fi
 done

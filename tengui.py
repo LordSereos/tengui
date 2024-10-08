@@ -172,7 +172,7 @@ def display_menu(stdscr):
                 selected_hosts.remove(selected_row)
             else:
                 selected_hosts.add(selected_row)
-        elif key == ord('q'):
+        elif key == ord('q') or key == 20:
             global stop_threads
             stop_threads = True
             break
@@ -183,7 +183,7 @@ def display_info(stdscr, host, port, username):
     stdscr.refresh()
     h, w, upper_y, selected_row = functions.set_window_param(stdscr)
 
-    functions.run_audit_retrieve_script(host, port, username)
+    functions.run_concrete_script("./modules/audit/retrieve.sh", host, port, username, "")
     functions.execute_generic_script("MANIFEST", host, port, username)
 
     ###################################################################
@@ -196,6 +196,8 @@ def display_info(stdscr, host, port, username):
     ports = functions.get_currently_opened_ports(host, port, username)
     lastb = functions.get_lastb_output(host)
     manifest = functions.get_manifest_output(host)
+    checked_ports = functions.get_checked_ports(host)
+
     ###################################################################
     ### Splits information into an array of strings based on line breaks.
     ###################################################################
@@ -205,10 +207,12 @@ def display_info(stdscr, host, port, username):
     ports_lines = ports.splitlines()
     lastb_lines = [line.strip() for line in lastb if line.strip()]
     manifest_lines = [line.strip() for line in manifest if line.strip()]
+    checked_ports_lines = [line.strip() for line in checked_ports if line.strip()]
 
 
     # logging.warning(f"Length of lastb: {len(lastb_lines)}")
-    logging.warning(f"manifest_Lines: {manifest_lines}")
+    # logging.warning(f"manifest_Lines: {manifest_lines}")
+    logging.warning(f"checked_ports_lines: {checked_ports_lines}")
 
 
     ###################################################################
@@ -218,8 +222,10 @@ def display_info(stdscr, host, port, username):
     ### of information is presented below.
     ###################################################################
 
-    unintented_lines = 12 + 1
-    total_height = len(users_lines) + len(services_lines) + len(ports_lines) + len(lastb_lines) + len(manifest_lines) + unintented_lines
+    unintented_lines = 14 + 1
+    total_height = (len(users_lines) + len(services_lines) + len(ports_lines)
+                    + len(lastb_lines) + len(manifest_lines) + len(checked_ports_lines)
+                    + unintented_lines)
 
     ###################################################################
     ### Initializes a scrollable pad for displaying information.
@@ -310,14 +316,34 @@ def display_info(stdscr, host, port, username):
                 else:
                     pad.addstr(i, 4, port_info)
 
-        lastb_section_start = len(users_lines) + len(services_lines) + len(ports_lines) + 6
+        checked_ports_lines_start = len(users_lines) + len(services_lines) + len(ports_lines) + 6
+        checked_ports_lines_end = checked_ports_lines_start + len(checked_ports_lines) + 1
+
+        boxes.display_pad_box(pad, f"Documented ports", curses, checked_ports_lines_start,
+                              checked_ports_lines_end, w)
+
+        for i, checked_ports_info in enumerate(checked_ports_lines, start=checked_ports_lines_start + 1):
+            if (i - 6) == selected_row:
+                if len(checked_ports_info) > w - 5:
+                    truncated_port = checked_ports_info[:w - 5]
+                    pad.addstr(i, 2, truncated_port, curses.A_REVERSE)
+                else:
+                    pad.addstr(i, 2, checked_ports_info, curses.A_REVERSE)
+            else:
+                if len(checked_ports_info) > w - 5:
+                    truncated_port = checked_ports_info[:w - 5]
+                    pad.addstr(i, 2, truncated_port)
+                else:
+                    pad.addstr(i, 2, checked_ports_info)
+
+        lastb_section_start = len(users_lines) + len(services_lines) + len(ports_lines) + len(checked_ports_lines) + 8
         lastb_section_end = lastb_section_start + len(lastb_lines) + 1
 
         boxes.display_pad_box(pad, f"Last unsuccessful logins", curses, lastb_section_start,
                               lastb_section_end, w)
 
         for i, lastb_info in enumerate(lastb_lines, start=lastb_section_start + 1):
-            if (i - 6) == selected_row:
+            if (i - 8) == selected_row:
                 if len(lastb_info) > w - 5:
                     truncated_port = lastb_info[:w - 5]
                     pad.addstr(i, 2, truncated_port, curses.A_REVERSE)
@@ -330,14 +356,14 @@ def display_info(stdscr, host, port, username):
                 else:
                     pad.addstr(i, 2, lastb_info)
 
-        manifest_section_start = len(users_lines) + len(services_lines) + len(ports_lines) + len(lastb_lines) + 8
+        manifest_section_start = len(users_lines) + len(services_lines) + len(ports_lines) + len(checked_ports_lines) + len(lastb_lines) + 10
         manifest_section_end = manifest_section_start + len(manifest_lines) + 1
 
         boxes.display_pad_box(pad, f"Changed files", curses, manifest_section_start,
                               manifest_section_end, w)
 
         for i, manifest_info in enumerate(manifest_lines, start=manifest_section_start + 1):
-            if (i - 8) == selected_row:
+            if (i - 10) == selected_row:
                 if len(manifest_info) > w - 5:
                     truncated_port = manifest_info[:w - 5]
                     pad.addstr(i, 2, truncated_port, curses.A_REVERSE)
@@ -349,6 +375,8 @@ def display_info(stdscr, host, port, username):
                     pad.addstr(i, 2, truncated_port)
                 else:
                     pad.addstr(i, 2, manifest_info)
+
+
 
         ###################################################################
         ### Display footer:
@@ -365,11 +393,12 @@ def display_info(stdscr, host, port, username):
         ### data where user thinks he is.
         ###################################################################
 
-        onIt, family = find_selected_element_in_host_info(selected_row, users_lines, services_lines, ports_lines, lastb_lines, manifest_lines)
+        onIt, family = find_selected_element_in_host_info(selected_row, users_lines,
+                services_lines, ports_lines, lastb_lines, manifest_lines, checked_ports_lines)
 
         stdscr.addstr(h - 3, 0, " " * w)
         boxes.display_footer_box(f"Press 'h' to open context menu                               ", h, stdscr, curses)
-        # bottom_message = (f"Selected row is {selected_row}, {len(lastb_lines)} onIt = {onIt.split()[0]+ '  ' + family+ ' '*10 } ")
+        # bottom_message = (f"Selected row is {selected_row}, {len(checked_ports_lines)} onIt = {onIt.split()[0]+ '  ' + family+ ' '*10 } ")
         # stdscr.addstr(h - 1, 0, bottom_message)
 
         ###################################################################
@@ -397,11 +426,11 @@ def display_info(stdscr, host, port, username):
             if selected_row < pad_pos:
                 pad_pos = selected_row - 1
         elif key == curses.KEY_DOWN:
-            selected_row = min((len(users_lines) + len(services_lines) + len(ports_lines) + len(lastb_lines) + len(manifest_lines)), selected_row + 1)
+            selected_row = min(total_height-unintented_lines, selected_row + 1)
             if selected_row >= pad_pos + h - unintented_lines:
                 pad_pos = min(selected_row - h + unintented_lines, total_height - h)
         elif key == ord(' '):
-            selected_row = min((len(users_lines) + len(services_lines) + len(ports_lines) + len(lastb_lines) + len(manifest_lines)), pad_pos + h - 3)
+            selected_row = min(total_height-unintented_lines, pad_pos + h - 3)
             pad_pos = min(total_height - h, pad_pos+h)
         elif key == ord('y') or key == ord('Y'):
             selected_row = max(1, selected_row - h)
@@ -415,7 +444,11 @@ def display_info(stdscr, host, port, username):
                 selected_row = len(users_lines) + len(services_lines) + 1
             if family == "PORTS":
                 selected_row = len(users_lines) + len(services_lines) + len(ports_lines) + 1
-            if selected_row >= pad_pos + h - 6:
+            if family == "CHECKED_PORTS":
+                selected_row = len(users_lines) + len(services_lines) + len(ports_lines) + len(checked_ports_lines) + 1
+            if family == "LASTB":
+                selected_row = len(users_lines) + len(services_lines) + len(ports_lines) + len(checked_ports_lines) + len(lastb_lines) + 1
+            if selected_row >= pad_pos + h - h/2:
                 pad_pos = min(total_height - h, selected_row + 3)
         elif key == ord('b') or key == ord('B'):
             # Jump to the previous family list
@@ -423,14 +456,18 @@ def display_info(stdscr, host, port, username):
                 selected_row = 1
             if family == "PORTS":
                 selected_row = len(users_lines) + 1
-            if family == "LASTB":
+            if family == "CHECKED_PORTS":
                 selected_row = len(users_lines) + len(services_lines) + 1
+            if family == "LASTB":
+                selected_row = len(users_lines) + len(services_lines) + len(ports_lines) + 1
+            if family == "MANIFEST":
+                selected_row = len(users_lines) + len(services_lines) + len(ports_lines) + len(checked_ports_lines)+ 1
             if selected_row <= pad_pos:
                 pad_pos = max(0, selected_row - 1)
         elif key == ord('h'):
             modal_visible = not modal_visible
-        # elif key == ord('u'):
-            # functions.run_audit_retrieve_script(host, port, username)
+        elif key == ord('u'):
+            functions.run_audit_retrieve_script(host, port, username)
         elif key == ord('s'):
             functions.interactive_shell(stdscr, host, port, username, curses)
         elif key == curses.KEY_ENTER or key == 10:
@@ -439,7 +476,7 @@ def display_info(stdscr, host, port, username):
             break
 
 
-def find_selected_element_in_host_info(selected_row, users_lines, services_lines, ports_lines, lastb_lines, manifest_lines):
+def find_selected_element_in_host_info(selected_row, users_lines, services_lines, ports_lines, lastb_lines, manifest_lines, checked_ports_lines):
     ###################################################################
     ### Mapping selected_row with real elements in lists, because when
     ### jumping we skip headers and empty lines
@@ -461,103 +498,21 @@ def find_selected_element_in_host_info(selected_row, users_lines, services_lines
         elif selected_row <= len(users_lines) + len(services_lines) + len(ports_lines):
             selected_element = ports_lines[selected_row - len(users_lines) - len(services_lines) - 1]
             family = "PORTS"
-        elif selected_row <= len(users_lines) + len(services_lines) + len(ports_lines) + len(lastb_lines):
-            selected_element = lastb_lines[selected_row - len(users_lines) - len(services_lines) - len(ports_lines) - 1]
+        elif selected_row <= len(users_lines) + len(services_lines) + len(ports_lines) + len(checked_ports_lines):
+            selected_element = checked_ports_lines[selected_row - len(users_lines) - len(services_lines) - len(ports_lines) - 1]
+            family = "CHECKED_PORTS"
+        elif selected_row <= len(users_lines) + len(services_lines) + len(ports_lines) + len(checked_ports_lines) + len(lastb_lines):
+            selected_element = lastb_lines[selected_row - len(users_lines) - len(services_lines) - len(ports_lines) - len(checked_ports_lines) - 1]
             family = "LASTB"
-        elif selected_row > len(users_lines) + len(services_lines) + len(ports_lines) + len(lastb_lines):
-            selected_element = manifest_lines[selected_row - len(users_lines) - len(services_lines) - len(ports_lines) - len(lastb_lines) - 1]
+        elif selected_row > len(users_lines) + len(services_lines) + len(ports_lines) + len(checked_ports_lines) + len(lastb_lines):
+            selected_element = manifest_lines[selected_row - len(users_lines) - len(services_lines) - len(ports_lines) - len(checked_ports_lines) - len(lastb_lines) - 1]
             family = "MANIFEST"
+        # elif selected_row > len(users_lines) + len(services_lines) + len(ports_lines) + len(lastb_lines) + len(manifest_lines):
+        #     selected_element = checked_ports_lines[selected_row - len(users_lines) - len(services_lines) - len(ports_lines) - len(lastb_lines) - len(manifest_lines)-1]
+        #     family = "CHECKED_PORTS"
 
     return selected_element, family
 
-
-def display_script_menu(stdscr, title, hosts, usernames, ports):
-    ###################################################################
-    ### display_script_menu() - final menu where user can view and
-    ### select scripts or scans which are to be run on the selected
-    ### host.
-    ###################################################################
-
-    stdscr.clear()
-    h, w, title_x, title_y, selected_row = functions.set_window_param(stdscr, title)
-
-    ###################################################################
-    ### selected_row is initiated from 3 becase we want to leave some
-    ### space at the top to display how many hosts are we applying the
-    ### scripts to.
-    ###
-    ### We will not be able to jump to lesser rows.
-    ###################################################################
-
-    selected_row = title_y + len(title) + 4
-
-    ###################################################################
-    ### script_lines - an array with the names of the scripts that
-    ### can be chosen. Will grow when new modules are added.
-    ###
-    ### script_x - an array containing x axis information of where to
-    ### place corresponding menu option. The rows are incrementory
-    ### by 2 so that they are not close together (for greater appeal).
-    ###################################################################
-
-    script_lines = ['PORTS', 'BACKUP', 'LYNIS', 'MANIFEST', 'CHKROOTKIT', 'AUDIT_SETUP', 'AUDIT_RETRIEVE',
-                    'CUSTOM_COMMAND']
-    script_x = [title_y + len(title) + 4 + i for i in range(len(script_lines))]
-
-    ###################################################################
-    ### Below we initialize and assign values from our documentation
-    ### for each host which hosts should be open and which directories
-    ### should be backed up.
-    ###
-    ### It reads from doc_file where all of relevant information for
-    ### each host will be present.
-    ###################################################################
-
-    doc_ports = [[] for _ in range(len(hosts))]
-    doc_locations = [[] for _ in range(len(hosts))]
-    doc_manifests = [[] for _ in range(len(hosts))]
-    doc_chkrootkit = [[] for _ in range(len(hosts))]
-    doc_audit = [[] for _ in range(len(hosts))]
-    for i, host in enumerate(hosts):
-        doc_ports[i] = functions.get_elements_for_ip(host, "ports")
-        doc_locations[i] = functions.get_elements_for_ip(host, "copy_locations")
-        doc_manifests[i] = functions.get_elements_for_ip(host, "manifest_dirs")
-        doc_chkrootkit[i] = functions.get_elements_for_ip(host, "chkrootkit")
-        doc_audit[i] = functions.get_elements_for_ip(host, "audit_dirs")
-
-    ###################################################################
-    ### Displaying menu options, highlighting when current row matches.
-    ###
-    ### When ENTER is pressed for the current row, a modal will appear
-    ### to guide user for further actions. Depending on which script
-    ### is to run, a modal with different parameters will open.
-    ###################################################################
-    while True:
-
-        boxes.display_title_box(title, title_y, title_x, stdscr, curses)
-        boxes.display_menu_box(title, title_y, w, script_lines, "Script menu", stdscr, curses, selected_row, 4)
-
-        bottom_message = f"Press 'q' to go back to all hosts"
-        stdscr.addstr(h - 2, 1, f"Selected hosts: {hosts}", curses.A_ITALIC | curses.A_DIM)
-        stdscr.addstr(h - 3, 1, bottom_message, curses.A_ITALIC | curses.A_DIM)
-
-        key = stdscr.getch()
-
-        if key == curses.KEY_UP:
-            selected_row = max(title_y + len(title) + 4, selected_row - 1)
-        elif key == curses.KEY_DOWN:
-            selected_row = min(title_y + len(title) + 11, selected_row + 1)
-        elif key == curses.KEY_ENTER or key in [10, 13]:
-            for i, option in enumerate(script_lines):
-                if selected_row == script_x[i]:
-                    boxes.script_menu_modal(stdscr, option, h, w, hosts, ports, usernames, doc_ports, doc_locations,
-                                            doc_manifests, doc_chkrootkit, doc_audit, curses)
-                    break
-        elif key == ord('q'):
-            break
-
-        stdscr.clear()
-        stdscr.refresh()
 
 
 if __name__ == "__main__":
