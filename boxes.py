@@ -604,7 +604,7 @@ def display_script_menu(host_info, curses, stdscr):
 
     max_y, max_x = stdscr.getmaxyx()
 
-    modal_height = 10
+    modal_height = 15
     modal_width = 40
 
     modal_y = (max_y - modal_height) // 2
@@ -619,7 +619,7 @@ def display_script_menu(host_info, curses, stdscr):
     modal.refresh()
     modal.keypad(True)
 
-    script_options = ["SETUP AUDIT", "MAKE BACKUP", "CHECK PORTS"]
+    script_options = ["SETUP AUDIT", "MAKE BACKUP", "CHECK PORTS", "MANIFEST", "CHECK ROOTKIT"]
 
     selected_row = 0
 
@@ -642,8 +642,12 @@ def display_script_menu(host_info, curses, stdscr):
         elif key == curses.KEY_DOWN:
             selected_row = min(len(script_options)-1, selected_row + 1)
         elif key == curses.KEY_ENTER or key in [10, 13]:
+            modal.addstr(modal_height - 4, 1, " "*(modal_width-3))
+            modal.addstr(modal_height - 4, 1, f"Executing {script_options[selected_row]}, please wait. ",)
+            modal.addstr(modal_height - 3, 1, " "*(modal_width-3))
+            modal.refresh()
             functions.execute_generic_script(script_options[selected_row], host_ips, host_ports, host_usernames)
-            modal.addstr(modal_height - 3, 1, f"Success!", curses.A_DIM | curses.A_ITALIC)
+            modal.addstr(modal_height - 3, 1, f"{script_options[selected_row]} executed!", curses.A_DIM | curses.A_ITALIC)
             modal.refresh()
         elif key == ord('q'):
             break

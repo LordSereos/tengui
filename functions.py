@@ -143,7 +143,7 @@ def run_shell_script(script_name, host, port, username, *args):
         ###################################################################
 
         output = stdout.read().decode()
-        output_file_path = f"./{host}-{script_name}.info"
+        output_file_path = f"./modules/ports/outputs/{host}-{script_name}.info"
         with open(output_file_path, 'w') as output_file:
             output_file.write(output)
         return output
@@ -186,9 +186,9 @@ def get_lastb_output(host):
         with open(file_path, 'r') as file:
             lines = file.readlines()
 
-        # Remove the last 2 lines first, then take the last 5 lines from the remaining lines
-        filtered_lines = lines[:-2]  # Remove last 2 lines
-        last_5_lines = filtered_lines[:10]  # Get the last 5 lines from the remaining ones
+        # Remove the last 2 lines which are empty
+        filtered_lines = lines[:-2]
+        last_5_lines = filtered_lines[:10]
 
         # logging.warning(f"Last 5 lines (after removing last 2) are: {last_5_lines}")
         return last_5_lines
@@ -203,10 +203,10 @@ def get_manifest_output(host):
         with open(file_path, 'r') as file:
             lines = file.readlines()
 
+        filtered_lines = [line for line in lines if '/.' not in line]
+        last_lines = filtered_lines[-10:]
 
-        last_lines = lines[-10:]  # Get the last 5 lines from the remaining ones
-
-        logging.warning(f"LAST 10 OF MANIFEST: {last_lines}")
+        logging.warning(f"LAST 10 OF MANIFEST (without hidden paths): {last_lines}")
         return last_lines
     else:
         raise FileNotFoundError(f"Log file {file_path} does not exist.")
@@ -219,6 +219,29 @@ def get_port_info(hosts, ports, usernames, *args):
     return 0
 
 
+def run_concrete_script(script_path, hosts, ports, usernames, *folders):
+    commands = []
+
+    if isinstance(hosts, str):
+        hosts = [hosts]
+    if isinstance(ports, str):
+        ports = [ports]
+    if isinstance(usernames, str):
+        usernames = [usernames]
+
+    for i, _ in enumerate(hosts):
+        command = f"{script_path} {usernames[i]} {hosts[i]} {ports[i]} {folders[i]} > /dev/null 2>&1"
+        commands.append(command)
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = [executor.submit(execute_command, cmd) for cmd in commands]
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                future.result()
+            except Exception as e:
+                print(f"ERROR: {e}")
+
+    return 0
 def run_backup_script(hosts, ports, usernames, *folders):
     commands = []
     for i, _ in enumerate(hosts):
@@ -280,7 +303,6 @@ def run_manifest_script(hosts, ports, usernames, *folders):
         usernames = [usernames]
 
     for i, _ in enumerate(hosts):
-        logging.warning(f"From here: {folders[i]}")
         command = f"./modules/hasher/hasher.sh {usernames[i]} {hosts[i]} {ports[i]} {folders[i]} > /dev/null 2>&1"
         commands.append(command)
 
@@ -297,9 +319,17 @@ def run_manifest_script(hosts, ports, usernames, *folders):
 
 def run_chkrootkit_script(hosts, ports, usernames, *folders):
     commands = []
+
+    if isinstance(hosts, str):
+        hosts = [hosts]
+    if isinstance(ports, str):
+        ports = [ports]
+    if isinstance(usernames, str):
+        usernames = [usernames]
+
     for i, _ in enumerate(hosts):
-        folders_str = ' '.join(folders[i])
-        command = f"./modules/chkrootkit/rootkit.sh {usernames[i]} {hosts[i]} {ports[i]} {folders_str} > /dev/null 2>&1"
+        # folders_str = ' '.join(folders[i])
+        command = f"./modules/chkrootkit/rootkit.sh {usernames[i]} {hosts[i]} {ports[i]} {folders[i]} > /dev/null 2>&1"
         commands.append(command)
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = [executor.submit(execute_command, cmd) for cmd in commands]
@@ -363,9 +393,6 @@ def run_audit_retrieve_script(hosts, ports, usernames):
     return 0
 
 
-
-
-
 # def run_custom_command_script(hosts, ports, usernames, custom_commands):
 #     commands = []
 #     print(f" sent {custom_commands} ")
@@ -382,6 +409,7 @@ def run_audit_retrieve_script(hosts, ports, usernames):
 #                 print(f"ERROR: {e}")
 #
 #     return 0
+
 
 def run_custom_command_script(hosts, ports, usernames, custom_commands):
     commands = []
@@ -626,15 +654,16 @@ def execute_generic_script(family, host_ips, host_ports, host_usernames):
     # logging.warning(f"doc_ports: {doc_ports}")
 
     if family == "SETUP AUDIT":
-        run_audit_setup_script(host_ips, host_ports, host_usernames)
+        run_concrete_script("./modules/audit/setup.sh", host_ips, host_ports, host_usernames, *doc_locations)
     if family == "MAKE BACKUP":
-        run_backup_script(host_ips, host_ports, host_usernames, *doc_locations)
+        run_concrete_script("./modules/backup/backupFiles.sh", host_ips, host_ports, host_usernames, *doc_locations)
     if family == "CHECK PORTS":
         get_port_info(host_ips, host_ports, host_usernames, *doc_ports)
     if family == "MANIFEST":
         logging.warning(f"Manifest location: {doc_manifests}")
-        # logging.warning(f"portsss location: {doc_ports}")
-        run_manifest_script(host_ips, host_ports, host_usernames, *doc_manifests)
+        run_concrete_script("./modules/hasher/hasher.sh", host_ips, host_ports, host_usernames, *doc_locations)
+    if family == "CHECK ROOTKIT":
+        run_concrete_script("./modules/chkrootkit/rootkit.sh", host_ips, host_ports, host_usernames, *doc_locations)
 
 
 
