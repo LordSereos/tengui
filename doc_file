@@ -21,7 +21,7 @@
   audit_dirs: ["/home/martin"]
 
 
-192.168.1.176:
+192.168.1.175:
   ports: [22, 80]
   copy_locations: ["/home/mal"]
   users: [mal]

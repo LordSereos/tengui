@@ -1,0 +1,40 @@
+---
+- name: "Create SSH dirs"
+  file:
+    path: "/home/{{ item }}/.ssh"
+    state: directory
+    mode: 0755
+    owner: "{{ item }}"
+    group: "blueteam"
+  with_items:
+    "{{ users }}"
+
+- name: "Set SSH keys"
+  authorized_key:
+    user: "{{ item }}"
+    key: "{{ lookup('file', '{{ role_path }}/files/{{ item }}.pub') }}"
+    state: present
+    exclusive: true
+  with_items:
+    "{{ users }}"
+
+- name: "config: Remove PasswordAuthentication"
+  replace:
+    path: /etc/ssh/sshd_config
+    regexp: '.*PasswordAuthentication.*\n'
+    replace: ""
+    backup: false
+
+- name: "config: Remote PermitEmptyPasswords"
+  replace:
+    path: /etc/ssh/sshd_config
+    regexp: '.*PermitEmptyPasswords.*\n'
+    replace: ""
+    backup: false
+
+- name: "config: Remote PermitRootLogin"
+  replace:
+    path: /etc/ssh/sshd_config
+    regexp: '.*PermitRootLogin.*\n'
+    replace: ""
+    backup: false

@@ -1,0 +1,84 @@
+---
+- name: "(apt) Update & Upgrade all packages"
+  apt:
+    name: "*"
+    state: latest
+    update_cache: yes
+    autoremove: yes
+  when: ansible_distribution == 'Debian'
+  
+- name: "Recursively change ownership of pam.d dir"
+  file:
+    path: "/etc/pam.d"
+    state: directory
+    recurse: yes
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: "Delete Crontab"
+  shell: crontab -r
+  ignore_errors: true
+
+- name: "Create script-scanner job"
+  cron:
+    name: "Script checking"
+    minute: "0,30"
+    hour: "10,11,12,13,14,15"
+    job: find / -type f -regextype egrep -regex '^.*\.(py|php|sh)$' | { read scr; if [ ! -z $scr]; then wall $scr; fi }
+
+- name: "Ensure blueteam group existence"
+  group:
+    name: "blueteam"
+    state: present
+    system: no
+
+- name: "Ensure existence of user groups"
+  group:
+    name: "{{ item }}"
+    state: present
+    system: no
+  with_items:
+    "{{ users }}"
+    
+- name: "Add users to blueteam group"
+  user:
+    name: "{{ item }}"
+    password: "{{ defpass | password_hash('sha256') }}"
+    append: true
+    group: "{{ item }}"
+    groups: "blueteam"
+    create_home: true
+    shell: /bin/bash
+    state: present
+    system: false
+  with_items:
+    "{{ users }}"
+
+#- name: "Enable lingering"
+#  command: "loginctl enable-linger {{ item }}"
+#  with_items:
+#    "{{ users }}"
+
+- name: "Copy .bashrc"
+  copy:
+    src: "{{ role_path }}/files/.bashrc"
+    dest: "/home/{{ item }}/.bashrc"
+    force: yes
+    owner: "{{ item }}"
+    group: "blueteam"
+  with_items:
+    "{{ users }}"
+
+- name: "Update permissions of user-info files under /etc"
+  file:
+    path: "/etc/{{ item }}"
+    owner: root
+    group: root
+    mode: '0644'
+  with_items:
+    - "shadow"
+    - "passwd"
+    - "group"
+    - "sudoers"
+    - "crontab"

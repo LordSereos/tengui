@@ -61,10 +61,13 @@ python3 tengui.py
     - CHECK PORTS: input which ports to check, or use default settings to see whether they are closed or opened and whether they should be opened, show warnings. Output is shown in **tengui/** directrly (TO DO: change it to /tengui/modules/ports)
     - MAKE BACKUPS: backs up files from a remote host using SCP. Backed up directories are found in **Tengui/backups**.
     - RUN LYNIS SCAN: returns logs to **tengui/modules/lynisCan**.
-    - MANIFEST: ...
-    - CHECK ROOTKIT: ...
-    - AUDIT SETUP: ...
-    - AUDIT RETRIEVAL: ...
+    - MANIFEST: creates MD5 hashes and runs diff with the previous hash ouput, per location. Diff output in **tengui/modules/hasher**.
+  NOTES:
+There have to be two hash files present locally for differ to work on.
+Filenames include timestamp therefore files created within the same minute window overwrite.
+    - CHECK ROOTKIT: runs rootkit/backdoor checks remotely. Saves output in **tengui/modules/chkrootkit**. Give few minutes for all scripts to execute and log to appear.
+    - AUDIT SETUP: prepares remote host agents for audit retrieval script.
+    - AUDIT RETRIEVAL: retrieves last, lastb, lastlog, ac, lastcomm logs from remote machine, stores locally in **tengui/modules/audit** for inspection and forensics.
     - CUSTOM COMMAND: any one-liner command can be entered to be executed on the remote host(s). If applicable, output will be shown in **/tengui/modules/runCmd**
   - Scripts are run simultaneously on multiple hosts, and some of them (like Lynis Scan) are run on the background.
 

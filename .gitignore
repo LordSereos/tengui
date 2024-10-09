@@ -1,3 +1,5 @@
 *.info
 env/
 hosts
+.idea
+__pycache__/
