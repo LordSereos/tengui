@@ -1,5 +1,4 @@
 #!/bin/bash
-
 username="$1"
 remote_host="$2"
 port="$3"
@@ -13,11 +12,12 @@ mkdir -p "$local_dir"
 touch $changelog
 
 for location in "${hash_locations[@]}"; do
-    loc_edit=$(echo "$location" | sed 's/\//_/g')
+    clean_location=$(echo "$location" | tr -d '[]')
+    loc_edit=$(echo "$clean_location" | sed 's/\//_/g')
     local_dest="${local_dir}${loc_edit}-${timestamp}.hashes"
     touch "$local_dest"
 
-    ssh_command="sudo find \"$location\" -type f | xargs sudo md5sum | awk '{print \$2 \" - \" \$1}'"
+    ssh_command="sudo find \"$clean_location\" -type f | xargs sudo md5sum | awk '{print \$2 \" - \" \$1}'"
     ssh "$username@$remote_host" "$ssh_command" >> "$local_dest"
 
     hash_files=($(find "$local_dir" -maxdepth 1 -type f -name "${loc_edit}*.hashes"))
@@ -42,15 +42,10 @@ for location in "${hash_locations[@]}"; do
             diff_files+=("$hash_file")
         done
 
-        diff_output=$(diff -c "${diff_files[0]}" "${diff_files[1]}")
-        echo "$diff_output" >> $changelog
+        diff_output=$(diff --changed-group-format='%>' --unchanged-group-format='' "${diff_files[0]}" "${diff_files[1]}")
+
+        echo "$diff_output" | awk -v timestamp="$(date '+%Y-%m-%d %H:%M:%S')" '{if ($1 != "") print timestamp, $1}' >> $changelog
+
+
     fi
 done
-
-
-
-
-
-
-
-
