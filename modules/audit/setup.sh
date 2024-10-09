@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/which bash
 #
 username="$1"
 remote_host="$2"
