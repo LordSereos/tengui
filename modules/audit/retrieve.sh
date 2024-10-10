@@ -4,7 +4,7 @@
 username="$1"
 remote_host="$2"
 port="$3"
-local_dir="/home/sereos/Desktop/tengui/modules/audit/${remote_host}/"
+local_dir="$(dirname "$(dirname "$0")")/audit/${remote_host}/"
 timestamp=$(date +%m%d_%H%M)
 
 mkdir -p "$local_dir"
