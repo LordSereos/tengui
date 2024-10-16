@@ -3,7 +3,7 @@
 /home/martin/.config/ibus/bus/03eed5f1078143b396c7cafb44231e0f-unix-wayland-0 - 6a8c6a92a0b156780e13da491bb824aa
 /home/martin/.config/ibus/bus/03eed5f1078143b396c7cafb44231e0f-unix-1 - 6a8c6a92a0b156780e13da491bb824aa
 /home/martin/.config/ibus/bus/03eed5f1078143b396c7cafb44231e0f-unix-0 - 6a8c6a92a0b156780e13da491bb824aa
-/home/martin/.config/dconf/user - febaff0a9b4f0c61bc0e20c7918e1972
+/home/martin/.config/dconf/user - 43009d0bdeafac247ed8a5e37b40a142
 /home/martin/.config/pulse/03eed5f1078143b396c7cafb44231e0f-card-database.tdb - 37cfe7738e14683fb396129d85a43a41
 /home/martin/.config/pulse/03eed5f1078143b396c7cafb44231e0f-device-volumes.tdb - 351f89433ce227e978a6989b8586b9da
 /home/martin/.config/pulse/03eed5f1078143b396c7cafb44231e0f-default-source - 68b329da9893e34099c7d8ad5cb9c940
@@ -25,7 +25,7 @@
 /home/martin/.local/share/keyrings/login.keyring - 6dc3601abcb02e5e6fb5d621d870e477
 /home/martin/.local/share/folks/relationships.ini - d41d8cd98f00b204e9800998ecf8427e
 /home/martin/.local/share/gnome-shell/application_state - 5f0a97ea5f30bb642fc9cc0f6e4c8d7e
-/home/martin/.local/share/gnome-shell/notifications - 03defb426ba10934602e9ef8cb8c15ce
+/home/martin/.local/share/gnome-shell/notifications - 68d1c6fe06993083936a96760a2e2621
 /home/martin/.local/share/gnome-shell/gnome-overrides-migrated - d41d8cd98f00b204e9800998ecf8427e
 /home/martin/.local/share/evolution/tasks/system/tasks.ics - 1b24efc22807fa8883ced23f3c53abef
 /home/martin/.local/share/evolution/calendar/system/calendar.ics - 4b37bbd0df84a517b3e3fc2a4f1baeda
@@ -34,7 +34,7 @@
 /home/martin/.local/share/gvfs-metadata/root-62c30d9c.log - bdee8c46f440bcd3c85cd708b632761f
 /home/martin/.local/share/gvfs-metadata/home-ae974d90.log - dc146ff43362e1dd5072bb9fa6abe561
 /home/martin/.local/share/gvfs-metadata/root - 5de884bc9898841898410df5bceeb054
-/home/martin/.local/share/tracker/data/tracker-store.journal - 54a568609ed0ca574e79129786a9ec57
+/home/martin/.local/share/tracker/data/tracker-store.journal - c6ef810e90c95f9e5d85509154a84060
 /home/martin/.local/share/tracker/data/tracker-store.ontology.journal - 5a69c1ab1c563698a2922019c23a450f
 /home/martin/newfile2 - 7494ab07987ba112bd5c4f9857ccfb3f
 /home/martin/klimb.txt - 49373e4bd8b3368731a662530d9d2906
@@ -100,9 +100,9 @@
 /home/martin/.cache/gnome-software/screenshots/624x351/6b836e038323ab1f1c5756eb7770f99157d97d95fe9fbdad6538b75ca1c1db47-image-1_orig.png - 1a073147cda0bdd88a9e161fff209d11
 /home/martin/.cache/event-sound-cache.tdb.03eed5f1078143b396c7cafb44231e0f.x86_64-pc-linux-gnu - baf44fabbba8d04b7df3e572cec35c13
 /home/martin/.cache/tracker/db-locale.txt - 95a7bb7a8d0ee402edde95bb78ef95c7
-/home/martin/.cache/tracker/meta.db - ec6adee7f0ca57f915194c47206394ab
-/home/martin/.cache/tracker/meta.db-wal - 3ee773e0db1a5cb24ed81e7caf5b8f3f
-/home/martin/.cache/tracker/meta.db-shm - d08e41aef92e17a069d0a308da254f9b
+/home/martin/.cache/tracker/meta.db - c1ca158121398f6a42c59adee78e5ab0
+/home/martin/.cache/tracker/meta.db-wal - e7a463dfd781fc9268350ab5ba9591e9
+/home/martin/.cache/tracker/meta.db-shm - d64b169a20e108c097492b0061a4c8bb
 /home/martin/.cache/tracker/last-crawl.txt - 37ff934f0f5d11c8138742c7eb31b77e
 /home/martin/.cache/tracker/parser-version.txt - c81e728d9d4c2f636f067f89cc14862c
 /home/martin/.cache/tracker/locale-for-miner-apps.txt - 95a7bb7a8d0ee402edde95bb78ef95c7
@@ -248,11 +248,12 @@
 /home/martin/.cache/mesa_shader_cache/91/0a10e0b72f64241332aa899879f6342f10a371 - 661935f66e1fa17cc8d920095ed67adb
 /home/martin/chkrootkit.tar.gz - de110f07f37b1b5caff2e90cc6172dd8
 /home/martin/test/hello - fa5d7f4b5a0b96ec75702d91967b0e82
-/home/martin/test2/hello3 - 7a3d7673f59f274e23d69c4e2fb31f8a
+/home/martin/test/smakfmak - 717c41ff4049b0e8cbdc7ec7e49ad021
+/home/martin/test2/hello3 - 11880ba13e619a4c1829510a6fb3ce88
 /home/martin/test2/gogle - 5c9648e8f4d5809a2a31828f9147a91e
 /home/martin/test2/hello - 68c757f9f1f6f0a551a518a66492e98c
 /home/martin/test2/hello4 - 273c895e1029e325784ff76d194365b4
-/home/martin/test2/hello2 - b77e1ed1656282d199aba5c008afdcfb
+/home/martin/test2/hello2 - ee86ea7e964b6fcd9686bfbd0247bc3c
 /home/martin/.bash_logout - 22bfb8c1dd94b5f3813a2b25da67463f
 /home/martin/.bashrc - ee35a240758f374832e809ae0ea4883a
 /home/martin/newfile - 4d710ef60ea0a468662fa3228be12198

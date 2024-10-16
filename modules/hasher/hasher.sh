@@ -4,7 +4,8 @@ remote_host="$2"
 port="$3"
 shift 3
 hash_locations=("$@")
-local_dir="/home/tom/MEGA/treciasKursas/tengui/modules/hasher/${remote_host}/"
+#local_dir="/home/tom/MEGA/treciasKursas/tengui/modules/hasher/${remote_host}/"
+local_dir="/home/sereos/Desktop/tengui/modules/hasher/${remote_host}/"
 timestamp=$(date +%m%d_%H%M)
 changelog="${local_dir}changelog"
 

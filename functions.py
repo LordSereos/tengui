@@ -235,7 +235,7 @@ def get_port_info(hosts, ports, usernames, *args):
 
 def run_concrete_script(script_path, hosts, ports, usernames, *folders):
     commands = []
-
+    logging.warning(f"Received manifest: {folders}")
     if isinstance(hosts, str):
         hosts = [hosts]
     if isinstance(ports, str):
@@ -243,8 +243,13 @@ def run_concrete_script(script_path, hosts, ports, usernames, *folders):
     if isinstance(usernames, str):
         usernames = [usernames]
 
+    flat_folders = [folder for sublist in folders for folder in sublist]
+
     for i, _ in enumerate(hosts):
-        command = f"{script_path} {usernames[i]} {hosts[i]} {ports[i]} {folders[i]} > /dev/null 2>&1"
+        # Join all flattened folder paths as a space-separated string
+        folder_str = " ".join(flat_folders)
+        command = f"{script_path} {usernames[i]} {hosts[i]} {ports[i]} {folder_str}"
+        logging.warning(f"Sent command: {command}")
         commands.append(command)
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -506,16 +511,16 @@ def execute_generic_script(family, host_ips, host_ports, host_usernames):
     # logging.warning(f"doc_ports: {doc_ports}")
 
     if family == "SETUP AUDIT":
-        run_concrete_script("./modules/audit/setup.sh", host_ips, host_ports, host_usernames, *doc_locations)
+        run_concrete_script("./modules/audit/setup.sh", host_ips, host_ports, host_usernames, *doc_audit)
     if family == "MAKE BACKUP":
         run_concrete_script("./modules/backup/backupFiles.sh", host_ips, host_ports, host_usernames, *doc_locations)
     if family == "CHECK PORTS":
         get_port_info(host_ips, host_ports, host_usernames, *doc_ports)
     if family == "MANIFEST":
-        logging.warning(f"Manifest location: {doc_manifests}")
-        run_concrete_script("./modules/hasher/hasher.sh", host_ips, host_ports, host_usernames, *doc_locations)
+        logging.warning(f"Sent location: {doc_manifests}")
+        run_concrete_script("./modules/hasher/hasher.sh", host_ips, host_ports, host_usernames, *doc_manifests)
     if family == "CHECK ROOTKIT":
-        run_concrete_script("./modules/chkrootkit/rootkit.sh", host_ips, host_ports, host_usernames, *doc_locations)
+        run_concrete_script("./modules/chkrootkit/rootkit.sh", host_ips, host_ports, host_usernames, *doc_chkrootkit)
 
 
 
