@@ -1,8 +1,20 @@
-X.X.X.X
-  ports: [22, 80]
-  copy_locations: [/remote/var/www]
-  manifest_dirs: [/remote/home]
-  chkrootkit: ["/remote/home"]
-
+192.168.204.5
+  ports: [22, 80, 65]
+  copy_locations: [/home/martin/test]
+  manifest_dirs: [/home/martin]
+  chkrootkit: ["/home/martin"]
+  
+192.168.204.3
+  ports: [22, 80, 66]
+  copy_locations: [/home/martin/test4]
+  manifest_dirs: [/home/martin]
+  chkrootkit: ["/home/martin"]
+  
+192.168.204.6
+  ports: [22, 80, 53]
+  copy_locations: [/home/sereos/wireless]
+  manifest_dirs: [/home/sereos]
+  chkrootkit: ["/home/sereos"]
+  audit_dirs: [/home/martin]
 ### users: [martin, martha]
 ### audit_dirs: ["/home/martin", "/etc"]

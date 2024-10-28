@@ -1,0 +1,46 @@
+2024-10-28 14:41:10,698 - WARNING - Received folders: ('',)
+2024-10-28 14:41:10,698 - WARNING - Script: ./modules/audit/retrieve.sh
+2024-10-28 14:41:10,698 - WARNING - Sent command: ./modules/audit/retrieve.sh martin 192.168.204.5 22 
+2024-10-28 14:41:10,978 - WARNING - host_ips: ['192.168.204.5']
+2024-10-28 14:41:10,978 - WARNING - 0 iteration 192.168.204.5
+2024-10-28 14:41:10,979 - WARNING - Sent location: [['/home/martin']]
+2024-10-28 14:41:10,979 - WARNING - Received folders: (['/home/martin'],)
+2024-10-28 14:41:10,979 - WARNING - Script: ./modules/hasher/hasher.sh
+2024-10-28 14:41:10,979 - WARNING - Sent command: ./modules/hasher/hasher.sh martin 192.168.204.5 22 /home/martin
+2024-10-28 14:41:12,181 - WARNING - LAST 10 OF MANIFEST (without hidden paths): ['2024-10-28 09:46:04 /home/martin/test/newfile\n']
+2024-10-28 14:41:12,182 - WARNING - Checked ports lines: ['SHOULD BE CLOSED: cupsd     456447   root    6u  IPv6 1638588      0t0  TCP [::1]:631 (LISTEN)\n', 'SHOULD BE CLOSED: cupsd     456447   root    7u  IPv4 1638589      0t0  TCP 127.0.0.1:631 (LISTEN)\n', 'SHOULD BE LISTENING: 80\n', 'SHOULD BE LISTENING: 65\n']
+2024-10-28 14:41:12,182 - WARNING - checked_ports_lines: ['SHOULD BE CLOSED: cupsd     456447   root    6u  IPv6 1638588      0t0  TCP [::1]:631 (LISTEN)', 'SHOULD BE CLOSED: cupsd     456447   root    7u  IPv4 1638589      0t0  TCP 127.0.0.1:631 (LISTEN)', 'SHOULD BE LISTENING: 80', 'SHOULD BE LISTENING: 65']
+2024-10-28 14:41:14,244 - WARNING - host_ips: ['192.168.204.5']
+2024-10-28 14:41:14,244 - WARNING - 0 iteration 192.168.204.5
+2024-10-28 14:41:14,245 - WARNING - Received folders: (['/home/martin'],)
+2024-10-28 14:41:14,245 - WARNING - Script: ./modules/audit/setup.sh
+2024-10-28 14:41:14,245 - WARNING - Sent command: ./modules/audit/setup.sh martin 192.168.204.5 22 /home/martin
+2024-10-28 14:41:28,012 - WARNING - Received folders: ('',)
+2024-10-28 14:41:28,012 - WARNING - Script: ./modules/audit/retrieve.sh
+2024-10-28 14:41:28,012 - WARNING - Sent command: ./modules/audit/retrieve.sh martin 192.168.204.5 22 
+2024-10-28 14:41:28,274 - WARNING - host_ips: ['192.168.204.5']
+2024-10-28 14:41:28,274 - WARNING - 0 iteration 192.168.204.5
+2024-10-28 14:41:28,274 - WARNING - Sent location: [['/home/martin']]
+2024-10-28 14:41:28,275 - WARNING - Received folders: (['/home/martin'],)
+2024-10-28 14:41:28,275 - WARNING - Script: ./modules/hasher/hasher.sh
+2024-10-28 14:41:28,275 - WARNING - Sent command: ./modules/hasher/hasher.sh martin 192.168.204.5 22 /home/martin
+2024-10-28 14:41:29,413 - WARNING - LAST 10 OF MANIFEST (without hidden paths): ['2024-10-28 09:46:04 /home/martin/test/newfile\n']
+2024-10-28 14:41:29,413 - WARNING - Checked ports lines: ['SHOULD BE CLOSED: cupsd     456447   root    6u  IPv6 1638588      0t0  TCP [::1]:631 (LISTEN)\n', 'SHOULD BE CLOSED: cupsd     456447   root    7u  IPv4 1638589      0t0  TCP 127.0.0.1:631 (LISTEN)\n', 'SHOULD BE LISTENING: 80\n', 'SHOULD BE LISTENING: 65\n']
+2024-10-28 14:41:29,413 - WARNING - checked_ports_lines: ['SHOULD BE CLOSED: cupsd     456447   root    6u  IPv6 1638588      0t0  TCP [::1]:631 (LISTEN)', 'SHOULD BE CLOSED: cupsd     456447   root    7u  IPv4 1638589      0t0  TCP 127.0.0.1:631 (LISTEN)', 'SHOULD BE LISTENING: 80', 'SHOULD BE LISTENING: 65']
+2024-10-28 14:41:41,846 - WARNING - host_ips: ['192.168.204.6']
+2024-10-28 14:41:41,846 - WARNING - 0 iteration 192.168.204.6
+2024-10-28 14:41:41,846 - WARNING - Received folders: (['/home/martin'],)
+2024-10-28 14:41:41,846 - WARNING - Script: ./modules/audit/setup.sh
+2024-10-28 14:41:41,846 - WARNING - Sent command: ./modules/audit/setup.sh sereos 192.168.204.6 22 /home/martin
+2024-10-28 14:41:55,934 - WARNING - Received folders: ('',)
+2024-10-28 14:41:55,935 - WARNING - Script: ./modules/audit/retrieve.sh
+2024-10-28 14:41:55,935 - WARNING - Sent command: ./modules/audit/retrieve.sh sereos 192.168.204.6 22 
+2024-10-28 14:41:56,216 - WARNING - host_ips: ['192.168.204.6']
+2024-10-28 14:41:56,216 - WARNING - 0 iteration 192.168.204.6
+2024-10-28 14:41:56,217 - WARNING - Sent location: [['/home/sereos']]
+2024-10-28 14:41:56,217 - WARNING - Received folders: (['/home/sereos'],)
+2024-10-28 14:41:56,217 - WARNING - Script: ./modules/hasher/hasher.sh
+2024-10-28 14:41:56,217 - WARNING - Sent command: ./modules/hasher/hasher.sh sereos 192.168.204.6 22 /home/sereos
+2024-10-28 14:41:58,707 - WARNING - LAST 10 OF MANIFEST (without hidden paths): ['2024-10-28 11:57:43 /home/sereos/chkrootkit-0.58b/chkrootkit.lsm\n', '2024-10-28 11:57:43 /home/sereos/chkrootkit-0.58b/chkwtmp.c\n', '2024-10-28 11:57:43 /home/sereos/chkrootkit-0.58b/chkrootkit\n', '2024-10-28 11:57:43 /home/sereos/chkrootkit-0.58b/Makefile\n', '2024-10-28 11:57:43 /home/sereos/chkrootkit-0.58b/chkdirs.c\n', '2024-10-28 11:57:43 /home/sereos/chkrootkit-0.58b/README.chklastlog\n', '2024-10-28 11:57:43 /home/sereos/chkrootkit-0.58b/check_wtmpx.c\n', '2024-10-28 11:57:43 /home/sereos/chkrootkit-0.58b/ACKNOWLEDGMENTS\n', '2024-10-28 11:57:43 /home/sereos/chkrootkit-0.58b/chklastlog.c\n', '2024-10-28 11:57:43 /home/sereos/chkrootkit-0.58b/COPYRIGHT\n']
+2024-10-28 14:41:58,707 - WARNING - Checked ports lines: ['SHOULD BE LISTENING: 80\n', 'SHOULD BE LISTENING: 53\n']
+2024-10-28 14:41:58,707 - WARNING - checked_ports_lines: ['SHOULD BE LISTENING: 80', 'SHOULD BE LISTENING: 53']

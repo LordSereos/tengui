@@ -7,7 +7,6 @@ import time
 import io
 import os
 
-
 logging.basicConfig(
     filename='debug.log',  # Log file
     level=logging.WARNING,  # Log level (DEBUG to capture all details)
@@ -72,7 +71,7 @@ def set_window_param(stdscr):
 def set_current_unintended(h, host_counts):
     unintended_lines = 0
     intended_lines = 0
-    for i in range(h):
+    for i in range(len(host_counts)):
         if host_counts[i]+4 + intended_lines + unintended_lines >= h:
             break
 
@@ -83,15 +82,21 @@ def set_current_unintended(h, host_counts):
 
 
 def run_shell_script(script_name, host, port, username, *args):
+    logging.warning("before try")
     try:
         ###################################################################
         ### Initializing SSH session using paramiko, loads system host keys
         ### and adds unknown to the known_hosts file.
         ###################################################################
+        logging.warning("222")
         ssh_client = paramiko.SSHClient()
+        logging.warning("333")
         ssh_client.load_system_host_keys()
+        logging.warning("444")
         ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        logging.warning("555")
         ssh_client.connect(host, port=port, username=username)
+        logging.warning("666")
 
         ###################################################################
         ### Verifying that SSH connection is active. If it is active,
@@ -107,7 +112,7 @@ def run_shell_script(script_name, host, port, username, *args):
         if script_path is None:
             print(f"Error: Script '{script_name}' not found.")
             return None
-
+        logging.warning("Script found and connection present")
         ###################################################################
         ### For executing remote script from REMOTE machine:
         ###################################################################
@@ -149,6 +154,7 @@ def run_shell_script(script_name, host, port, username, *args):
         return output
     except Exception as e:
         print("Error", e)
+        logging.warning(f"Error: {e}")
         return None
     finally:
         if ssh_client:
@@ -174,9 +180,8 @@ def get_running_services(host, port, username):
 
 
 def get_currently_opened_ports(host, port, username):
-    command = f'ssh -o StrictHostKeyChecking=no -p {port} {username}@{host} sudo lsof -i -P -n'
+    command = f'ssh -o StrictHostKeyChecking=yes -p {port} {username}@{host} sudo lsof -i -P -n'
     return execute_command(command)
-    #return run_shell_script("get_currently_opened_ports", host, port, username)
 
 
 def get_lastb_output(host):
@@ -228,14 +233,17 @@ def get_checked_ports(host):
 
 def get_port_info(hosts, ports, usernames, *args):
     # print(args)
+    logging.warning(f"args: {args}")
     for i, _ in enumerate(hosts):
-        run_shell_script("check_ports", hosts[i-1], ports[i-1], usernames[i-1], *args[i-1])
+        logging.warning(f"Running shell script with args: {hosts[i]}, {ports[i]}, {usernames[i]}")
+        run_shell_script("check_ports", hosts[i], ports[i], usernames[i], *args[i])
     return 0
 
 
 def run_concrete_script(script_path, hosts, ports, usernames, *folders):
     commands = []
-    logging.warning(f"Received manifest: {folders}")
+    logging.warning(f"Received folders: {folders}")
+    logging.warning(f"Script: {script_path}")
     if isinstance(hosts, str):
         hosts = [hosts]
     if isinstance(ports, str):
