@@ -1,1 +1,12 @@
-paramiko==3.4.0
+ON MASTER MACHINE:
+
+paramiko==3.4.0 (upgrade with pip install --upgrade paramiko)
+
+Share ssh keys from master machines with 
+  ssh-copy-id -i ~/.ssh/id_rsa.pub username@IP
+
+ON REMOTE MACHINES:
+
+sudo service ssh start 
+sudo visudo
+%sudo   ALL=(ALL:ALL) NOPASSWD: ALL
