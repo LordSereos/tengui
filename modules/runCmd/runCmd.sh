@@ -8,7 +8,7 @@ shift 3
 # Store the entire command as a single string
 command="$*"
 
-local_dir="/home/sereos/Desktop/tengui/modules/runCmd/${remote_host}/"
+local_dir="./modules/runCmd/${remote_host}/"
 timestamp=$(date +%m%d_%H%M)
 
 local_dest="${local_dir}runCmd-${timestamp}.log"
