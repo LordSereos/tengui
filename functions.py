@@ -72,7 +72,7 @@ def set_window_param(stdscr):
 def set_current_unintended(h, host_counts):
     unintended_lines = 0
     intended_lines = 0
-    for i in range(h):
+    for i in range(len(host_counts)):
         if host_counts[i]+4 + intended_lines + unintended_lines >= h:
             break
 
@@ -511,7 +511,7 @@ def execute_generic_script(family, host_ips, host_ports, host_usernames):
     # logging.warning(f"doc_ports: {doc_ports}")
 
     if family == "SETUP AUDIT":
-        run_concrete_script("./modules/audit/setup.sh", host_ips, host_ports, host_usernames, *doc_audit)
+        run_concrete_script("./modules/audit/setup.sh", host_ips, host_ports, host_usernames, ["/home"])
     if family == "MAKE BACKUP":
         run_concrete_script("./modules/backup/backupFiles.sh", host_ips, host_ports, host_usernames, *doc_locations)
     if family == "CHECK PORTS":

@@ -2,7 +2,7 @@ X.X.X.X
   ports: [22, 80]
   copy_locations: [/remote/var/www]
   manifest_dirs: [/remote/home]
-  chkrootkit: ["/remote/home"]
+  chkrootkit: [/remote/home]
 
 ### users: [martin, martha]
-### audit_dirs: ["/home/martin", "/etc"]
+### audit_dirs: [/home]
