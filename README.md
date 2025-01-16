@@ -19,6 +19,10 @@ Under supervision of:
 
 Aim of this tool is to quickly display necessary monitoring information about connected hosts machines (Linux only) and provide functionality to quickly mitigate possible threats, which can be deducted from the displayed information in the TUI.
 
+## Demo
+
+![Alt Text](utils/Pavyzdysgif.gif)
+
 ## Files description
 There are following directories and files in this project:
 
