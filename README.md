@@ -17,6 +17,8 @@ Under supervision of:
 - dr. Linas Bukauskas
 - lect. Virgilijus Krinickij
 
+And since 2023 restructured, redesigned and fully maintained by Martin Martijan.
+
 Aim of this tool is to quickly display necessary monitoring information about connected hosts machines (Linux only) and provide functionality to quickly mitigate possible threats, which can be deducted from the displayed information in the TUI.
 
 ## Demo
