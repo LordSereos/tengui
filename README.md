@@ -15,7 +15,7 @@ Tengui TUI (terminal user interface) is a work-in-progress tool for remote host 
 Under supervision of:
 
 - dr. Linas Bukauskas
-- lect. Virgilijus Krinickij
+- Teach. Asst. Virgilijus Krinickij
 
 And since 2023 restructured, redesigned and fully maintained by Martin Martijan.
 
